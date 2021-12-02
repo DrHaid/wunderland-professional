@@ -7,6 +7,8 @@ import tempfile
 import ctypes
 import argparse
 from PIL import Image, ImageOps
+from sys import platform
+from pywal import wallpaper
 
 class Weather:
     def __init__(self, emoji, name, overlay):
@@ -39,19 +41,30 @@ def get_teamsbg_path():
     return os.path.join(os.getenv('APPDATA'), 'Microsoft\\Teams\\Backgrounds\\Uploads')
 
 def save_teamsbg():
+    if platform != "win32":
+        print("Microsoft Teams background only supported on Windows :(")
+        return
     dir = get_teamsbg_path()
     img_thumb = BG_IMG.resize((280, 158))
     bg_path = os.path.join(dir, "wunderland.png")
     bgthumb_path = os.path.join(dir, "wunderland_thumb.png")
     BG_IMG.save(bg_path)
     img_thumb.save(bgthumb_path)
+    print("Microsoft Teams background saved")
 
 def set_wallpaper():
     dir = tempfile.gettempdir()
     path = os.path.join(dir, "wunderland.bmp")
     BG_IMG.save(path)
-    SPI_SETDESKWALLPAPER = 0x0014
-    ctypes.windll.user32.SystemParametersInfoW(SPI_SETDESKWALLPAPER, 0, path , 0)
+
+    if platform == "win32":
+        ctypes.windll.user32.SystemParametersInfoW(20, 0, path, 0)
+    elif platform == "darwin":
+        wallpaper.set_mac_wallpaper(path)
+    else:
+        desktop = wallpaper.get_desktop_env()
+        wallpaper.set_desktop_wallpaper(desktop, path)
+    print("Desktop wallpaper set")
 
 """
 Get weather for current IP using wttr.in (https://github.com/chubin/wttr.in)  
@@ -109,10 +122,8 @@ def main():
 
     if args.teams:
         save_teamsbg()
-        print("Microsoft Teams background saved")
     if args.desktop:
         set_wallpaper()
-        print("Desktop wallpaper set")
 
 
 if __name__ == "__main__":
