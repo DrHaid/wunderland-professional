@@ -6,6 +6,7 @@ import requests
 import tempfile
 import ctypes
 import argparse
+import dbus
 from PIL import Image, ImageOps
 from sys import platform
 from pywal import wallpaper
@@ -63,8 +64,33 @@ def set_wallpaper():
         wallpaper.set_mac_wallpaper(path)
     else:
         desktop = wallpaper.get_desktop_env()
-        wallpaper.set_desktop_wallpaper(desktop, path)
+        if desktop == "KDE":
+            set_kde_wallpaper(path)
+        else:
+            wallpaper.set_desktop_wallpaper(desktop, path)
     print("Desktop wallpaper set")
+
+"""
+special workaround for kde (credit: https://github.com/the404devs/pywal-kde)
+"""
+def set_kde_wallpaper(img):
+    """Set the wallpaper on KDE Plasma"""
+    # For whatever reason, it's not as simple as one would think.
+    # Shoutouts to pashazz on GitHub, the author of this snippet
+    # Taken from https://github.com/pashazz/ksetwallpaper
+    jscript = """
+    var allDesktops = desktops();
+    print (allDesktops);
+    for (i=0;i<allDesktops.length;i++) {
+        d = allDesktops[i];
+        d.wallpaperPlugin = "%s";
+        d.currentConfigGroup = Array("Wallpaper", "%s", "General");
+        d.writeConfig("Image", "file://%s")
+    }
+    """
+    bus = dbus.SessionBus()
+    plasma = dbus.Interface(bus.get_object('org.kde.plasmashell', '/PlasmaShell'), dbus_interface='org.kde.PlasmaShell')
+    plasma.evaluateScript(jscript % ('org.kde.image', 'org.kde.image', img))
 
 """
 Get weather for current IP using wttr.in (https://github.com/chubin/wttr.in)  
