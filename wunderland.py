@@ -6,7 +6,6 @@ import requests
 import tempfile
 import ctypes
 import argparse
-import dbus
 from PIL import Image, ImageOps
 from sys import platform
 from pywal import wallpaper
@@ -88,6 +87,7 @@ def set_kde_wallpaper(img):
         d.writeConfig("Image", "file://%s")
     }
     """
+    import dbus
     bus = dbus.SessionBus()
     plasma = dbus.Interface(bus.get_object('org.kde.plasmashell', '/PlasmaShell'), dbus_interface='org.kde.PlasmaShell')
     plasma.evaluateScript(jscript % ('org.kde.image', 'org.kde.image', img))
