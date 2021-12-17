@@ -112,18 +112,15 @@ def get_random_position(grounded):
         y = random.randint(0, y_on_curve - 1)
     return (x, y)
 
-def add_cows():
-    cow_img = Image.open('img/cow_xmas.png')
-    cow_count = 6
-
-    for x in range(0, cow_count):
-        cow_img = ImageOps.mirror(cow_img)
+def place_images(img: Image, count: int):
+    for x in range(0, count):
+        img = ImageOps.mirror(img)
 
         pos = get_random_position(True)
-        cow_pos_x = int(pos[0] - (cow_img.size[0] / 2))
-        cow_pos_y = int(pos[1] - (cow_img.size[1] - 50)) # -50 origin bottom offset
+        pos_x = int(pos[0] - (img.size[0] / 2))
+        pos_y = int(pos[1] - (img.size[1]))
 
-        LAYERS.append(Layer(cow_img, (cow_pos_x, cow_pos_y)))
+        LAYERS.append(Layer(img, (pos_x, pos_y)))
 
 def main():
     global BG_IMG
@@ -131,7 +128,11 @@ def main():
     weather = get_weather()
     BG_IMG = Image.open(f'img/wallpaper_{weather.name}.png')
     
-    add_cows()
+    # place cows
+    cow_img = Image.open('img/cow_xmas.png')
+    cow_count = 6
+    place_images(cow_img, cow_count)
+
     LAYERS.sort(key=lambda x: x.position[1])
 
     for layer in LAYERS:
