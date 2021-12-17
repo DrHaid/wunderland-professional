@@ -113,7 +113,7 @@ def get_random_position(grounded):
     return (x, y)
 
 def add_cows():
-    cow_img = Image.open('img/cow.png')
+    cow_img = Image.open('img/cow_xmas.png')
     cow_count = 6
 
     for x in range(0, cow_count):
