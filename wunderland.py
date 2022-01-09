@@ -85,12 +85,13 @@ def set_kde_wallpaper(img):
         d.wallpaperPlugin = "%s";
         d.currentConfigGroup = Array("Wallpaper", "%s", "General");
         d.writeConfig("Image", "file://%s")
+        d.writeConfig("Image", "file://%s")
     }
     """
     import dbus
     bus = dbus.SessionBus()
     plasma = dbus.Interface(bus.get_object('org.kde.plasmashell', '/PlasmaShell'), dbus_interface='org.kde.PlasmaShell')
-    plasma.evaluateScript(jscript % ('org.kde.image', 'org.kde.image', img))
+    plasma.evaluateScript(jscript % ('org.kde.image', 'org.kde.image', '%s', img))
 
 """
 Get weather for current IP using wttr.in (https://github.com/chubin/wttr.in)  
