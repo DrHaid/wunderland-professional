@@ -125,12 +125,13 @@ def place_images(img: Image, count: int):
 
 def main():
     global BG_IMG
-    
+    ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+
     weather = get_weather()
-    BG_IMG = Image.open(f'img/wallpaper_{weather.name}.png')
+    BG_IMG = Image.open(f'{ROOT_DIR}/img/wallpaper_{weather.name}.png')
     
     # place cows
-    cow_img = Image.open('img/cow_xmas.png')
+    cow_img = Image.open(f'{ROOT_DIR}/img/cow_xmas.png')
     cow_count = 6
     place_images(cow_img, cow_count)
 
@@ -140,7 +141,7 @@ def main():
         BG_IMG.paste(layer.image, layer.position, mask=layer.image)
     
     if weather.overlay:
-        overlay = Image.open(f'img/overlay_wallpaper_{weather.overlay}.png')
+        overlay = Image.open(f'{ROOT_DIR}/img/overlay_wallpaper_{weather.overlay}.png')
         BG_IMG.paste(overlay, mask=overlay)
 
     parser = argparse.ArgumentParser()
