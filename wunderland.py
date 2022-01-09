@@ -70,7 +70,7 @@ def set_wallpaper():
     print("Desktop wallpaper set")
 
 """
-special workaround for kde (credit: https://github.com/the404devs/pywal-kde)
+special workaround for kde
 """
 def set_kde_wallpaper(img):
     """Set the wallpaper on KDE Plasma"""
