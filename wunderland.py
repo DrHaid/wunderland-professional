@@ -70,7 +70,7 @@ def set_wallpaper():
     print("Desktop wallpaper set")
 
 """
-special workaround for kde (credit: https://github.com/the404devs/pywal-kde)
+special workaround for kde
 """
 def set_kde_wallpaper(img):
     """Set the wallpaper on KDE Plasma"""
@@ -85,12 +85,13 @@ def set_kde_wallpaper(img):
         d.wallpaperPlugin = "%s";
         d.currentConfigGroup = Array("Wallpaper", "%s", "General");
         d.writeConfig("Image", "file://%s")
+        d.writeConfig("Image", "file://%s")
     }
     """
     import dbus
     bus = dbus.SessionBus()
     plasma = dbus.Interface(bus.get_object('org.kde.plasmashell', '/PlasmaShell'), dbus_interface='org.kde.PlasmaShell')
-    plasma.evaluateScript(jscript % ('org.kde.image', 'org.kde.image', img))
+    plasma.evaluateScript(jscript % ('org.kde.image', 'org.kde.image', '%s', img))
 
 """
 Get weather for current IP using wttr.in (https://github.com/chubin/wttr.in)  
@@ -124,12 +125,13 @@ def place_images(img: Image, count: int):
 
 def main():
     global BG_IMG
-    
+    ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+
     weather = get_weather()
-    BG_IMG = Image.open(f'img/wallpaper_{weather.name}.png')
+    BG_IMG = Image.open(f'{ROOT_DIR}/img/wallpaper_{weather.name}.png')
     
     # place cows
-    cow_img = Image.open('img/cow_xmas.png')
+    cow_img = Image.open(f'{ROOT_DIR}/img/cow_xmas.png')
     cow_count = 6
     place_images(cow_img, cow_count)
 
@@ -139,7 +141,7 @@ def main():
         BG_IMG.paste(layer.image, layer.position, mask=layer.image)
     
     if weather.overlay:
-        overlay = Image.open(f'img/overlay_wallpaper_{weather.overlay}.png')
+        overlay = Image.open(f'{ROOT_DIR}/img/overlay_wallpaper_{weather.overlay}.png')
         BG_IMG.paste(overlay, mask=overlay)
 
     parser = argparse.ArgumentParser()
