@@ -131,7 +131,7 @@ def main():
     BG_IMG = Image.open(f'{ROOT_DIR}/img/wallpaper_{weather.name}.png')
     
     # place cows
-    cow_img = Image.open(f'{ROOT_DIR}/img/cow_xmas.png')
+    cow_img = Image.open(f'{ROOT_DIR}/img/cow.png')
     cow_count = 6
     place_images(cow_img, cow_count)
 
