@@ -71,7 +71,7 @@ def place_images(wunderland: Wunderland, img_name: str, count: int):
     for x in range(0, count):
         img = wunderland.get_image_from_name(img_name)
         pos = wunderland.get_random_position(True)
-        wunderland.add_entity(image=img, position=pos, facing_right=(x % 2 == 0))       
+        wunderland.add_entity(wunderland=wunderland, image=img, position=pos, facing_right=(x % 2 == 0))       
 
 def main():
     wunderland = Wunderland()
