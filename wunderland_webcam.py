@@ -14,6 +14,16 @@ def threshold(img, thresh=128, maxval=255, type=cv2.THRESH_BINARY):
     threshed = cv2.threshold(img, thresh, maxval, type)[1]
     return threshed
 
+def get_mask(frame, segmentor):
+    img_out = segmentor.removeBG(frame, imgBg=(0, 255, 0), threshold=0.73)  # replace background with green
+    green = np.array([0, 255, 0])
+    mask = cv2.inRange(img_out, green, green) # make mask using green background
+    
+    # smooth mask outlines (needs work)
+    mask  = cv2.GaussianBlur(mask, (27, 27), 0)
+    mask = threshold(mask)
+    return mask
+
 def place_images(wunderland: Wunderland, img_name: str, count: int):
     for x in range(0, count):
         img = wunderland.get_image_from_name(img_name)
@@ -38,18 +48,12 @@ def main():
     # place cows
     place_images(wunderland=wunderland, img_name="cow", count=6)
 
+    # mock_cam = cv2.VideoCapture('webcam.mp4')
     with pyvirtualcam.Camera(width=width, height=height, fps=fps) as cam:
         print(f'Using virtual camera: {cam.device}')
         last_time = time.time()
         while True:
             success, frame = cap.read()
-            img_out = segmentor.removeBG(frame, imgBg=(0, 255, 0), threshold=0.73)  # replace background with green
-            green = np.array([0, 255, 0])
-            mask = cv2.inRange(img_out, green, green) # make mask using green background
-            
-            # smooth mask outlines (needs work)
-            mask  = cv2.GaussianBlur(mask, (27, 27), 0)
-            mask = threshold(mask)
 
             # get next wunderland rendered frame
             delta_time = time.time() - last_time
@@ -60,9 +64,11 @@ def main():
             wunderland_frame = cv2.resize(wunderland_frame, (width, height))
 
             # combine frame and wunderland_frame
+            mask = get_mask(frame, segmentor)
             res = cv2.bitwise_and(frame, frame, mask=mask)
             f = frame - res
             f = np.where(f == 0, wunderland_frame, f)
+            f = cv2.cvtColor(np.array(f), cv2.COLOR_RGB2BGR)
 
             cam.send(f)
             cam.sleep_until_next_frame()
