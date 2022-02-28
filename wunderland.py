@@ -1,14 +1,10 @@
-#! /usr/bin/env python
 import os
-import math
 import random
+import math
+from typing import Tuple
 import requests
-import tempfile
-import ctypes
-import argparse
 from PIL import Image, ImageOps
-from sys import platform
-from pywal import wallpaper
+
 
 class Weather:
     def __init__(self, emoji, name, overlay):
@@ -16,144 +12,143 @@ class Weather:
         self.name = name
         self.overlay = overlay
 
-class Layer:
-    def __init__(self, image, position):
+class Wunderland:
+    WEATHER_MAP = [
+        Weather("☀️", "sunny", ""), # sunny
+        Weather("☁️", "cloudy", ""), # cloudy
+        Weather("⛅️", "partlycloudy", ""), # partly cloudy
+        Weather("⛈", "stormy", "rainy"), # thunder + rain
+        Weather("🌦", "cloudy", "rainy"), # partly cloudy + rain
+        Weather("🌧", "rainy", "rainy"), # rainy
+        Weather("🌨", "cloudy", "snowy"), # light snow
+        Weather("❄", "snowy", "snowy"), # snowy
+        Weather("🌩", "stormy", ""), # thunder
+        Weather("🌫", "cloudy", "foggy") # foggy
+    ]
+
+    def get_image_from_name(self, img_name: str):
+        return Image.open(f'{self.ROOT_DIR}/img/{img_name}.png')
+
+    """
+    Get weather for current IP using wttr.in (https://github.com/chubin/wttr.in)  
+    """
+    def get_weather(self, weather_str: str) -> Weather:
+        response = requests.get("http://wttr.in?format=\"%c\"")
+        w = response.content.decode("utf-8")[1:-1].strip() if not weather_str else weather_str
+        weather = [x for x in self.WEATHER_MAP if x.emoji == w]
+        return weather[0]
+
+    """
+    Get random position on wunderland.
+    """
+    def get_random_position(self, grounded: bool, origin: Tuple = None, radius: int = None) -> Tuple:
+        def max(a, b):
+            if a >= b:
+                return a
+            else:
+                return b
+
+        def min(a, b):
+            if a < b:
+                return a
+            else:
+                return b
+        
+        if origin:
+            x_min = int(max(origin[0] - radius, 0))
+            x_max = int(min(origin[0] + radius, self.BG_IMG.size[0] - 1))
+            x = random.randint(x_min, x_max)
+        else:
+            x = random.randint(0, self.BG_IMG.size[0] - 1)
+
+        bg_img_ground_equ = 50 * math.sin(0.0021 * (x + 200)) - 624     # basically magic
+        y_on_curve = abs(int(bg_img_ground_equ))
+
+        if origin:
+            y_min = int(max(origin[1] - radius, y_on_curve if grounded else 0))
+            y_max = int(min(origin[1] + radius, self.BG_IMG.size[1] - 1 if grounded else y_on_curve))
+            y = random.randint(y_min, y_max)
+        else:
+            if grounded:
+                y = random.randint(y_on_curve, self.BG_IMG.size[1] - 1)
+            else:
+                y = random.randint(0, y_on_curve - 1)
+        
+        return (x, y)
+
+    """
+    Add a WunderlandEntity to this Wunderland instance 
+    """
+    def add_entity(self, wunderland, image: Image, position: Tuple, facing_right: bool):
+        entity = WunderlandEntity(wunderland=wunderland, image=image, position=position, facing_right=facing_right)
+        self.wunderland_entities.append(entity)
+
+    """
+    Render frame of the Wunderland.
+    """
+    def get_frame(self) -> Image:
+        self.wunderland_entities.sort(key=lambda x: x.position[1])
+        frame = self.BG_IMG.copy()
+
+        for entity in self.wunderland_entities:
+            # use image bottom center as pivot
+            pos_x = int(entity.position[0] - (entity.image.size[0] / 2))
+            pos_y = int(entity.position[1] - (entity.image.size[1]))
+            frame.paste(entity.image, (pos_x, pos_y), mask=entity.image)
+
+        if self.weather.overlay:
+            overlay = Image.open(f'{self.ROOT_DIR}/img/overlay_wallpaper_{self.weather.overlay}.png')
+            frame.paste(overlay, mask=overlay)
+        
+        return frame
+
+    """
+    Update all WunderlandEntity positions. delta_time is time since last update.
+    """
+    def do_animation_step(self, delta_time: float):
+        for entity in self.wunderland_entities:
+            entity.move(delta_time)
+
+    def __init__(self, weather_str = None):
+        self.ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+        self.weather = self.get_weather(weather_str)
+        self.BG_IMG = Image.open(f'{self.ROOT_DIR}/img/wallpaper_{self.weather.name}.png')
+        self.wunderland_entities = []
+
+
+class WunderlandEntity:
+    def __init__(self, wunderland: Wunderland, image: Image, position: Tuple, facing_right: bool):
+        self.wunderland = wunderland
         self.image = image
         self.position = position
+        self.facing_right = False    # initially all images are facing left
+        self.target_position = None
+        self.timeout = None
+        
+        self.flip_img(facing_right=facing_right)
 
-WEATHER_MAP = [
-    Weather("☀️", "sunny", ""), # sunny
-    Weather("☁️", "cloudy", ""), # cloudy
-    Weather("⛅️", "partlycloudy", ""), # partly cloudy
-    Weather("⛈", "stormy", "rainy"), # thunder + rain
-    Weather("🌦", "cloudy", "rainy"), # partly cloudy + rain
-    Weather("🌧", "rainy", "rainy"), # rainy
-    Weather("🌨", "cloudy", "snowy"), # light snow
-    Weather("❄", "snowy", "snowy"), # snowy
-    Weather("🌩", "stormy", ""), # thunder
-    Weather("🌫", "cloudy", "foggy") # foggy
-]
+    def flip_img(self, facing_right: bool):
+        if self.facing_right != facing_right:
+            self.image = ImageOps.mirror(self.image)
+            self.facing_right = facing_right
 
-BG_IMG = None
-LAYERS = []
+    def move(self, delta_time: float):
+        if not self.target_position:
+            self.target_position = self.wunderland.get_random_position(True, self.position, 200)
+            self.timeout = 0
 
-def get_teamsbg_path():
-    return os.path.join(os.getenv('APPDATA'), 'Microsoft\\Teams\\Backgrounds\\Uploads')
+        dist = delta_time * 10
+        if self.timeout <= 0:
+            vec = (self.target_position[0] - self.position[0], self.target_position[1] - self.position[1])
+            len = math.sqrt(vec[0] * vec[0] + vec[1] * vec[1])
+            unit = (vec[0] / len, vec[1] / len)
+            self.position = (self.position[0] + unit[0] * dist, self.position[1] + unit[1] * dist)
+            self.flip_img(unit[0] >= 0)
 
-def save_teamsbg():
-    if platform != "win32":
-        print("Microsoft Teams background only supported on Windows :(")
-        return
-    dir = get_teamsbg_path()
-    img_thumb = BG_IMG.resize((280, 158))
-    bg_path = os.path.join(dir, "wunderland.png")
-    bgthumb_path = os.path.join(dir, "wunderland_thumb.png")
-    BG_IMG.save(bg_path)
-    img_thumb.save(bgthumb_path)
-    print("Microsoft Teams background saved")
+        else: 
+            self.timeout = self.timeout - delta_time
 
-def set_wallpaper():
-    dir = tempfile.gettempdir()
-    path = os.path.join(dir, "wunderland.bmp")
-    BG_IMG.save(path)
-
-    if platform == "win32":
-        ctypes.windll.user32.SystemParametersInfoW(20, 0, path, 0)
-    elif platform == "darwin":
-        wallpaper.set_mac_wallpaper(path)
-    else:
-        desktop = wallpaper.get_desktop_env()
-        if desktop == "KDE":
-            set_kde_wallpaper(path)
-        else:
-            wallpaper.set_desktop_wallpaper(desktop, path)
-    print("Desktop wallpaper set")
-
-"""
-special workaround for kde
-"""
-def set_kde_wallpaper(img):
-    """Set the wallpaper on KDE Plasma"""
-    # For whatever reason, it's not as simple as one would think.
-    # Shoutouts to pashazz on GitHub, the author of this snippet
-    # Taken from https://github.com/pashazz/ksetwallpaper
-    jscript = """
-    var allDesktops = desktops();
-    print (allDesktops);
-    for (i=0;i<allDesktops.length;i++) {
-        d = allDesktops[i];
-        d.wallpaperPlugin = "%s";
-        d.currentConfigGroup = Array("Wallpaper", "%s", "General");
-        d.writeConfig("Image", "file://%s")
-        d.writeConfig("Image", "file://%s")
-    }
-    """
-    import dbus
-    bus = dbus.SessionBus()
-    plasma = dbus.Interface(bus.get_object('org.kde.plasmashell', '/PlasmaShell'), dbus_interface='org.kde.PlasmaShell')
-    plasma.evaluateScript(jscript % ('org.kde.image', 'org.kde.image', '%s', img))
-
-"""
-Get weather for current IP using wttr.in (https://github.com/chubin/wttr.in)  
-"""
-def get_weather():
-    response = requests.get("http://wttr.in?format=\"%c\"")
-    weather_response = response.content.decode("utf-8")[1:-1].strip()
-    weather = [x for x in WEATHER_MAP if x.emoji == weather_response]
-    return weather[0]
-
-def get_random_position(grounded):
-    x = random.randint(0, BG_IMG.size[0] - 1)
-    bg_img_ground_equ = 50 * math.sin(0.0021 * (x + 200)) - 624
-    y_on_curve = abs(int(bg_img_ground_equ))
-    y = 0
-    if grounded:
-        y = random.randint(y_on_curve, BG_IMG.size[1] - 1)
-    else:
-        y = random.randint(0, y_on_curve - 1)
-    return (x, y)
-
-def place_images(img: Image, count: int):
-    for x in range(0, count):
-        img = ImageOps.mirror(img)
-
-        pos = get_random_position(True)
-        pos_x = int(pos[0] - (img.size[0] / 2))
-        pos_y = int(pos[1] - (img.size[1]))
-
-        LAYERS.append(Layer(img, (pos_x, pos_y)))
-
-def main():
-    global BG_IMG
-    ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-
-    weather = get_weather()
-    BG_IMG = Image.open(f'{ROOT_DIR}/img/wallpaper_{weather.name}.png')
-    
-    # place cows
-    cow_img = Image.open(f'{ROOT_DIR}/img/cow.png')
-    cow_count = 6
-    place_images(cow_img, cow_count)
-
-    LAYERS.sort(key=lambda x: x.position[1])
-
-    for layer in LAYERS:
-        BG_IMG.paste(layer.image, layer.position, mask=layer.image)
-    
-    if weather.overlay:
-        overlay = Image.open(f'{ROOT_DIR}/img/overlay_wallpaper_{weather.overlay}.png')
-        BG_IMG.paste(overlay, mask=overlay)
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-t', '--teams', action='store_true', dest='teams', help='Saves Wunderland as Microsoft Teams background')
-    parser.add_argument('-d', '--desktop', action='store_true', dest='desktop', help='Sets Wunderland as Desktop wallpaper')
-    args = parser.parse_args()
-
-    if args.teams:
-        save_teamsbg()
-    if args.desktop:
-        set_wallpaper()
-
-
-if __name__ == "__main__":
-    main()
+        if math.dist(self.position, self.target_position) < 10:
+            self.timeout = random.random() * 15 + 5
+            self.target_position = self.wunderland.get_random_position(True, self.position, 200)
+        
