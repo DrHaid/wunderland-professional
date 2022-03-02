@@ -74,16 +74,19 @@ def place_images(wunderland: Wunderland, img_name: str, count: int):
         wunderland.add_entity(wunderland=wunderland, image=img, position=pos, facing_right=(x % 2 == 0))       
 
 def main():
-    wunderland = Wunderland()
-    
-    # place cows
-    place_images(wunderland=wunderland, img_name="cow", count=6)
-    frame = wunderland.get_frame()
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', '--teams', action='store_true', dest='teams', help='Saves Wunderland as Microsoft Teams background')
     parser.add_argument('-d', '--desktop', action='store_true', dest='desktop', help='Sets Wunderland as Desktop wallpaper')
+    parser.add_argument('-c', '--cows', type=int, dest='cow_count', default=6, help='Define how many cows populate the Wunderland')
+    parser.add_argument('-l', '--location', type=str, dest='location', default=None, help='Overwrite the location for the current weather')
     args = parser.parse_args()
+
+    wunderland = Wunderland(location_overwrite=args.location)
+
+    # place cows
+    place_images(wunderland=wunderland, img_name="cow", count=args.cow_count)
+    frame = wunderland.get_frame()
 
     if args.teams:
         save_teamsbg(frame)

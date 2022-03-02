@@ -32,9 +32,10 @@ class Wunderland:
     """
     Get weather for current IP using wttr.in (https://github.com/chubin/wttr.in)  
     """
-    def get_weather(self, weather_str: str) -> Weather:
-        response = requests.get("http://wttr.in?format=\"%c\"")
-        w = response.content.decode("utf-8")[1:-1].strip() if not weather_str else weather_str
+    def get_weather(self, weather_str: str = None, location_overwrite: str = None) -> Weather:
+        location = "" if not location_overwrite else location_overwrite
+        response = requests.get(f'http://wttr.in/{location}?format=%c')
+        w = response.content.decode("utf-8").strip() if not weather_str else weather_str
         weather = [x for x in self.WEATHER_MAP if x.emoji == w]
         return weather[0]
 
@@ -109,9 +110,9 @@ class Wunderland:
         for entity in self.wunderland_entities:
             entity.move(delta_time)
 
-    def __init__(self, weather_str = None):
+    def __init__(self, weather_str = None, location_overwrite=None):
         self.ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-        self.weather = self.get_weather(weather_str)
+        self.weather = self.get_weather(weather_str, location_overwrite)
         self.BG_IMG = Image.open(f'{self.ROOT_DIR}/img/wallpaper_{self.weather.name}.png')
         self.wunderland_entities = []
 
