@@ -1,3 +1,4 @@
+from multiprocessing.connection import wait
 import time
 import cv2
 import numpy as np
@@ -33,6 +34,7 @@ def place_images(wunderland: Wunderland, img_name: str, count: int):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--cam', type=int, dest='cam_index', default=0, help='Index of video capturing device')
+    parser.add_argument('-m', '--mock', action='store_true', dest='mock', help='Use "webcam.mp4" to mock webcam. Crashes when video over :(')
     args = parser.parse_args()
 
     cap = cv2.VideoCapture(args.cam_index)
@@ -48,12 +50,12 @@ def main():
     # place cows
     place_images(wunderland=wunderland, img_name="cow", count=6)
 
-    # mock_cam = cv2.VideoCapture('webcam.mp4')
+    mock_cam = cv2.VideoCapture('webcam.mp4')
     with pyvirtualcam.Camera(width=width, height=height, fps=fps) as cam:
         print(f'Using virtual camera: {cam.device}')
         last_time = time.time()
         while True:
-            success, frame = cap.read()
+            success, frame = mock_cam.read() if args.mock else cam.read()
 
             # get next wunderland rendered frame
             delta_time = time.time() - last_time
@@ -65,12 +67,16 @@ def main():
 
             # combine frame and wunderland_frame
             mask = get_mask(frame, segmentor)
-            res = cv2.bitwise_and(frame, frame, mask=mask)
-            f = frame - res
-            f = np.where(f == 0, wunderland_frame, f)
-            f = cv2.cvtColor(np.array(f), cv2.COLOR_RGB2BGR)
+            bg = cv2.bitwise_and(wunderland_frame, wunderland_frame, mask=mask)
+            mask_inv = cv2.bitwise_not(mask)
+            # mask_blur  = cv2.GaussianBlur(mask_inv, (27, 27), 0)
+            f = cv2.bitwise_and(frame, frame, mask=mask_inv)
+            res = cv2.add(bg, f)
+            # f = np.where(f == 0, wunderland_frame, f)
+            res = cv2.cvtColor(np.array(res), cv2.COLOR_RGB2BGR)
 
-            cam.send(f)
+            cam.send(res)
+            # cam.send(cv2.merge((mask,mask,mask)))
             cam.sleep_until_next_frame()
 
 if __name__ == "__main__":
