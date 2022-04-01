@@ -21,7 +21,7 @@ class Wunderland:
         Weather("🌦", "cloudy", "rainy"), # partly cloudy + rain
         Weather("🌧", "rainy", "rainy"), # rainy
         Weather("🌨", "cloudy", "snowy"), # light snow
-        Weather("❄", "snowy", "snowy"), # snowy
+        Weather("❄️", "snowy", "snowy"), # snowy
         Weather("🌩", "stormy", ""), # thunder
         Weather("🌫", "cloudy", "foggy") # foggy
     ]
