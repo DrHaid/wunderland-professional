@@ -1,1 +1,1 @@
-py ".\wunderland.py" %*
+py ".\wunderland_wallpaper.py" %*
