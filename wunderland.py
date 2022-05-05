@@ -80,8 +80,12 @@ class Wunderland:
     """
     Add a WunderlandEntity to this Wunderland instance 
     """
-    def add_entity(self, wunderland, image: Image, position: Tuple, facing_right: bool):
-        entity = WunderlandEntity(wunderland=wunderland, image=image, position=position, facing_right=facing_right)
+    def add_entity(self, wunderland, image: Image, position: Tuple, facing_right: bool, color: str = None):
+        entity = WunderlandEntity(
+            wunderland=wunderland, 
+            image=image, position=position, 
+            facing_right=facing_right, 
+            color=color)
         self.wunderland_entities.append(entity)
 
     """
@@ -118,9 +122,9 @@ class Wunderland:
 
 
 class WunderlandEntity:
-    def __init__(self, wunderland: Wunderland, image: Image, position: Tuple, facing_right: bool):
+    def __init__(self, wunderland: Wunderland, image: Image, position: Tuple, facing_right: bool, color: str):
         self.wunderland = wunderland
-        self.image = image
+        self.image = self.tint_image(image, color) if color else image
         self.position = position
         self.facing_right = False    # initially all images are facing left
         self.target_position = None
@@ -128,6 +132,20 @@ class WunderlandEntity:
         
         self.flip_img(facing_right=facing_right)
 
+    """
+    Tint input image using hex color.
+    """
+    def tint_image(self, src: Image, color: str) -> Image:
+        src.load()
+        r, g, b, alpha = src.split()
+        gray = ImageOps.grayscale(src)
+        result = ImageOps.colorize(gray, (0, 0, 0, 0), color) 
+        result.putalpha(alpha)
+        return result
+
+    """
+    Change image facing direction.
+    """
     def flip_img(self, facing_right: bool):
         if self.facing_right != facing_right:
             self.image = ImageOps.mirror(self.image)

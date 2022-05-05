@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 import os
 import math
+import random
 import tempfile
 import ctypes
 import argparse
@@ -67,11 +68,17 @@ def set_kde_wallpaper(img):
     plasma.evaluateScript(jscript % ('org.kde.image', 'org.kde.image', '%s', img))
 
 
-def place_images(wunderland: Wunderland, img_name: str, count: int):
+def place_images(wunderland: Wunderland, img_name: str, count: int, colorize: bool = False):
     for x in range(0, count):
         img = wunderland.get_image_from_name(img_name)
+        if colorize:
+            hex_color = ["#"+''.join([random.choice('ABCDEF0123456789') for i in range(6)])]
         pos = wunderland.get_random_position(True)
-        wunderland.add_entity(wunderland=wunderland, image=img, position=pos, facing_right=(x % 2 == 0))       
+        wunderland.add_entity(
+            wunderland=wunderland, 
+            image=img, position=pos, 
+            facing_right=(x % 2 == 0), 
+            color=hex_color[0] if colorize else None)   
 
 def main():
 
