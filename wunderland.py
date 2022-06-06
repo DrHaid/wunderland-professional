@@ -1,6 +1,9 @@
 import os
 import random
 import math
+import io
+import json
+import base64
 from typing import Tuple
 import requests
 from PIL import Image, ImageOps
@@ -28,6 +31,21 @@ class Wunderland:
 
     def get_image_from_name(self, img_name: str):
         return Image.open(f'{self.ROOT_DIR}/img/{img_name}.png')
+
+    def get_image_from_base64(self, img_base64: str):
+        im_bytes = base64.b64decode(img_base64)
+        im_file = io.BytesIO(im_bytes)
+        img = Image.open(im_file)
+        img = img.resize((164, 164))
+        return img
+
+    """
+    Get custom drawn cows from API.
+    """
+    def get_online_images(self, count: int):
+        response = requests.get(f'https://drhaid.com/api/cows/random/{count}')
+        data = json.loads(response.content)
+        return [self.get_image_from_base64(cow["image_data"].replace("data:image/png;base64,", "")) for cow in data]
 
     """
     Get weather for current IP using wttr.in (https://github.com/chubin/wttr.in)  

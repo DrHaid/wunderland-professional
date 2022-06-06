@@ -80,19 +80,38 @@ def place_images(wunderland: Wunderland, img_name: str, count: int, colorize: bo
             facing_right=(x % 2 == 0), 
             color=hex_color[0] if colorize else None)   
 
+def place_online_images(wunderland: Wunderland, count: int):
+    online_cows = wunderland.get_online_images(count)
+    for cow in online_cows:
+        pos = wunderland.get_random_position(True)
+        wunderland.add_entity(
+            wunderland=wunderland, 
+            image=cow, position=pos, 
+            facing_right=False)
+    
+    leftovers = count - len(online_cows) 
+    if (leftovers) > 0:
+        place_images(wunderland=wunderland, img_name="cow", count=leftovers)
+
 def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', '--teams', action='store_true', dest='teams', help='Saves Wunderland as Microsoft Teams background')
     parser.add_argument('-d', '--desktop', action='store_true', dest='desktop', help='Sets Wunderland as Desktop wallpaper')
     parser.add_argument('-c', '--cows', type=int, dest='cow_count', default=6, help='Define how many cows populate the Wunderland')
+    parser.add_argument('-o', '--online', action='store_true', dest='online', help='Use custom drawn cows from API')
     parser.add_argument('-l', '--location', type=str, dest='location', default=None, help='Overwrite the location for the current weather')
     args = parser.parse_args()
 
     wunderland = Wunderland(location_overwrite=args.location)
+    wunderland.get_online_images(5)
 
     # place cows
-    place_images(wunderland=wunderland, img_name="cow", count=args.cow_count)
+    if args.online:
+        place_online_images(wunderland=wunderland, count=args.cow_count)
+    else:    
+        place_images(wunderland=wunderland, img_name="cow", count=args.cow_count)
+    
     frame = wunderland.get_frame()
 
     if args.teams:
