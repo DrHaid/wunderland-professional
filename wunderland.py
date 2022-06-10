@@ -60,7 +60,7 @@ class Wunderland:
     """
     Get random position on wunderland.
     """
-    def get_random_position(self, grounded: bool, origin: Tuple = None, radius: int = None) -> Tuple:
+    def get_random_position(self, grounded: bool, padding: Tuple = (0, 0, 0, 0), origin: Tuple = None, radius: int = None) -> Tuple:
         def max(a, b):
             if a >= b:
                 return a
@@ -74,24 +74,24 @@ class Wunderland:
                 return b
         
         if origin:
-            x_min = int(max(origin[0] - radius, 0))
-            x_max = int(min(origin[0] + radius, self.BG_IMG.size[0] - 1))
+            x_min = int(max(origin[0] - radius, 0 + padding[0]))
+            x_max = int(min(origin[0] + radius, self.BG_IMG.size[0] - 1 - padding[2]))
             x = random.randint(x_min, x_max)
         else:
-            x = random.randint(0, self.BG_IMG.size[0] - 1)
+            x = random.randint(0 + padding[0], self.BG_IMG.size[0] - 1 - padding[2])
 
         bg_img_ground_equ = 50 * math.sin(0.0021 * (x + 200)) - 624     # basically magic
         y_on_curve = abs(int(bg_img_ground_equ))
 
         if origin:
-            y_min = int(max(origin[1] - radius, y_on_curve if grounded else 0))
-            y_max = int(min(origin[1] + radius, self.BG_IMG.size[1] - 1 if grounded else y_on_curve))
+            y_min = int(max(origin[1] - radius, y_on_curve + padding[1] if grounded else 0 + padding[1]))
+            y_max = int(min(origin[1] + radius, self.BG_IMG.size[1] - 1 - padding[3] if grounded else y_on_curve - padding[3]))
             y = random.randint(y_min, y_max)
         else:
             if grounded:
-                y = random.randint(y_on_curve, self.BG_IMG.size[1] - 1)
+                y = random.randint(y_on_curve + padding[1], self.BG_IMG.size[1] - 1 - padding[3])
             else:
-                y = random.randint(0, y_on_curve - 1)
+                y = random.randint(0 + padding[1], y_on_curve - 1 - padding[3])
         
         return (x, y)
 
@@ -114,9 +114,11 @@ class Wunderland:
         frame = self.BG_IMG.copy()
 
         for entity in self.wunderland_entities:
-            # use image bottom center as pivot
-            pos_x = int(entity.position[0] - (entity.image.size[0] / 2))
-            pos_y = int(entity.position[1] - (entity.image.size[1]))
+            bbox = entity.image.getbbox()
+            pivot_x = ((bbox[2] - bbox[0]) / 2) + bbox[0]
+            pivot_y = ((bbox[3] - bbox[1]) / 2) + bbox[1]
+            pos_x = int(entity.position[0] - pivot_x)
+            pos_y = int(entity.position[1] - pivot_y)
             frame.paste(entity.image, (pos_x, pos_y), mask=entity.image)
 
         if self.weather.overlay:
@@ -171,7 +173,7 @@ class WunderlandEntity:
 
     def move(self, delta_time: float):
         if not self.target_position:
-            self.target_position = self.wunderland.get_random_position(True, self.position, 200)
+            self.target_position = self.wunderland.get_random_position(True, self.position, radius=200)
             self.timeout = 0
 
         dist = delta_time * 10
@@ -187,5 +189,5 @@ class WunderlandEntity:
 
         if math.dist(self.position, self.target_position) < 10:
             self.timeout = random.random() * 15 + 5
-            self.target_position = self.wunderland.get_random_position(True, self.position, 200)
+            self.target_position = self.wunderland.get_random_position(True, self.position, radius=200)
         

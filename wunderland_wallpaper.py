@@ -73,7 +73,7 @@ def place_images(wunderland: Wunderland, img_name: str, count: int, colorize: bo
         img = wunderland.get_image_from_name(img_name)
         if colorize:
             hex_color = ["#"+''.join([random.choice('ABCDEF0123456789') for i in range(6)])]
-        pos = wunderland.get_random_position(True)
+        pos = wunderland.get_random_position(True, (75, 10, 75, 100))
         wunderland.add_entity(
             wunderland=wunderland, 
             image=img, position=pos, 
@@ -81,20 +81,19 @@ def place_images(wunderland: Wunderland, img_name: str, count: int, colorize: bo
             color=hex_color[0] if colorize else None)   
 
 def place_online_images(wunderland: Wunderland, count: int):
-    online_cows = wunderland.get_online_images(count)
+    online_cows = wunderland.get_online_images(count - 1)
     for cow in online_cows:
-        pos = wunderland.get_random_position(True)
+        pos = wunderland.get_random_position(True, (75, 10, 75, 100))
         wunderland.add_entity(
             wunderland=wunderland, 
             image=cow, position=pos, 
             facing_right=False)
     
     leftovers = count - len(online_cows) 
-    if (leftovers) > 0:
+    if (leftovers) >= 0:
         place_images(wunderland=wunderland, img_name="cow", count=leftovers)
 
 def main():
-
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', '--teams', action='store_true', dest='teams', help='Saves Wunderland as Microsoft Teams background')
     parser.add_argument('-d', '--desktop', action='store_true', dest='desktop', help='Sets Wunderland as Desktop wallpaper')
