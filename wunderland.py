@@ -173,7 +173,7 @@ class WunderlandEntity:
 
     def move(self, delta_time: float):
         if not self.target_position:
-            self.target_position = self.wunderland.get_random_position(True, self.position, radius=200)
+            self.target_position = self.wunderland.get_random_position(True, origin=self.position, radius=200)
             self.timeout = 0
 
         dist = delta_time * 10
@@ -189,5 +189,5 @@ class WunderlandEntity:
 
         if math.dist(self.position, self.target_position) < 10:
             self.timeout = random.random() * 15 + 5
-            self.target_position = self.wunderland.get_random_position(True, self.position, radius=200)
+            self.target_position = self.wunderland.get_random_position(True, origin=self.position, radius=200)
         

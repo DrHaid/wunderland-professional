@@ -1,10 +1,10 @@
-from multiprocessing.connection import wait
 import time
 import cv2
+import mediapipe as mp
 import numpy as np
 import argparse
 import pyvirtualcam
-from cvzone.SelfiSegmentationModule import SelfiSegmentation
+mp_selfie_segmentation = mp.solutions.selfie_segmentation
 
 from wunderland import Wunderland
 
@@ -15,14 +15,16 @@ def threshold(img, thresh=128, maxval=255, type=cv2.THRESH_BINARY):
     threshed = cv2.threshold(img, thresh, maxval, type)[1]
     return threshed
 
-def get_mask(frame, segmentor):
-    img_out = segmentor.removeBG(frame, imgBg=(0, 255, 0), threshold=0.73)  # replace background with green
-    green = np.array([0, 255, 0])
-    mask = cv2.inRange(img_out, green, green) # make mask using green background
+def get_mask(frame, segmentation):
+    results = segmentation.process(frame)
+    # convert mask to int8
+    mask = results.segmentation_mask
+    mask = cv2.convertScaleAbs(mask, alpha=(255.0))
     
-    # smooth mask outlines (needs work)
-    mask  = cv2.GaussianBlur(mask, (27, 27), 0)
-    mask = threshold(mask)
+    # blur mask
+    mask = cv2.GaussianBlur(mask, (61, 61), 0, 0)
+    i, mask = cv2.threshold(mask, 128, 255, cv2.THRESH_BINARY)
+    mask = cv2.GaussianBlur(mask, (21, 21), 0, 0)
     return mask
 
 def place_images(wunderland: Wunderland, img_name: str, count: int):
@@ -44,40 +46,46 @@ def main():
     cap.set(cv2.CAP_PROP_FRAME_WIDTH , width)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
     cap.set(cv2.CAP_PROP_FPS, fps)
-    segmentor = SelfiSegmentation()
 
     wunderland = Wunderland()
     # place cows
     place_images(wunderland=wunderland, img_name="cow", count=6)
 
-    mock_cam = cv2.VideoCapture('webcam.mp4')
-    with pyvirtualcam.Camera(width=width, height=height, fps=fps) as cam:
-        print(f'Using virtual camera: {cam.device}')
-        last_time = time.time()
-        while True:
-            success, frame = mock_cam.read() if args.mock else cam.read()
-
-            # get next wunderland rendered frame
-            delta_time = time.time() - last_time
-            wunderland.do_animation_step(delta_time=delta_time)
+    with mp_selfie_segmentation.SelfieSegmentation(
+        model_selection=1) as selfie_segmentation:
+        mock_cam = cv2.VideoCapture('webcam_capture.mp4')
+        with pyvirtualcam.Camera(width=width, height=height, fps=fps) as cam:
+            print(f'Using virtual camera: {cam.device}')
             last_time = time.time()
-            wunderland_frame = wunderland.get_frame()
-            wunderland_frame = cv2.cvtColor(np.array(wunderland_frame), cv2.COLOR_RGB2BGR)
-            wunderland_frame = cv2.resize(wunderland_frame, (width, height))
+            while True:
+                success, frame = mock_cam.read() if args.mock else cam.read()
 
-            # combine frame and wunderland_frame
-            mask = get_mask(frame, segmentor)
-            bg = cv2.bitwise_and(wunderland_frame, wunderland_frame, mask=mask)
-            mask_inv = cv2.bitwise_not(mask)
-            # mask_blur  = cv2.GaussianBlur(mask_inv, (27, 27), 0)
-            f = cv2.bitwise_and(frame, frame, mask=mask_inv)
-            res = cv2.add(bg, f)
-            # f = np.where(f == 0, wunderland_frame, f)
-            res = cv2.cvtColor(np.array(res), cv2.COLOR_RGB2BGR)
+                # get next wunderland rendered frame
+                delta_time = time.time() - last_time
+                wunderland.do_animation_step(delta_time=delta_time)
+                last_time = time.time()
+                wunderland_frame = wunderland.get_frame()
+                wunderland_frame = cv2.cvtColor(np.array(wunderland_frame), cv2.COLOR_RGB2BGR)
+                wunderland_frame = cv2.resize(wunderland_frame, (width, height))
 
-            cam.send(res)
-            # cam.send(cv2.merge((mask,mask,mask)))
-            cam.sleep_until_next_frame()
+                # combine frame and wunderland_frame
+                mask = get_mask(frame, selfie_segmentation)
+                mask_3chan = np.stack([mask.astype('float') / 255.]*3, axis=2)
+                frame = frame.astype('float') / 255.
+                wunderland_frame = wunderland_frame.astype('float') / 255.
+                out  = wunderland_frame * (1 - mask_3chan) + frame * mask_3chan
+
+                # convert back to uint8
+                out = out / out.max()
+                out = 255 * out
+                img = out.astype(np.uint8)
+
+                cv2.imshow('MediaPipe Selfie Segmentation', img)
+                if cv2.waitKey(5) & 0xFF == 27:
+                    break
+
+                cam.send(img)
+                cam.sleep_until_next_frame()
 
 if __name__ == "__main__":
     main()

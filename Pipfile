@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+cvzone = "==1.5.6"
+numpy = "==1.22.2"
+opencv-python = "==4.5.5.62"
+pillow = "==9.0.1"
+pyvirtualcam = "==0.9.0"
+pywal = "==3.3.0"
+requests = "==2.27.1"
+mediapipe = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.10"
