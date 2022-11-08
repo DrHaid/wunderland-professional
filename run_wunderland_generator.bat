@@ -1,1 +1,1 @@
-py ".\wunderland_wallpaper.py" %*
+<PATH_TO_PYTHON.EXE> ".\wunderland_wallpaper.py" %*

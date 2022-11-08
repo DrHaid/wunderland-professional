@@ -97,6 +97,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', '--teams', action='store_true', dest='teams', help='Saves Wunderland as Microsoft Teams background')
     parser.add_argument('-d', '--desktop', action='store_true', dest='desktop', help='Sets Wunderland as Desktop wallpaper')
+    parser.add_argument('-f', '--file', type=str, dest='filepath', default=None, help='Save the Wunderland in a specified file path')
     parser.add_argument('-c', '--cows', type=int, dest='cow_count', default=6, help='Define how many cows populate the Wunderland')
     parser.add_argument('-o', '--online', action='store_true', dest='online', help='Use custom drawn cows from API')
     parser.add_argument('-l', '--location', type=str, dest='location', default=None, help='Overwrite the location for the current weather')
@@ -117,6 +118,8 @@ def main():
         save_teamsbg(frame)
     if args.desktop:
         set_wallpaper(frame)
+    if args.filepath:
+        frame.save(args.filepath)
 
 
 if __name__ == "__main__":
