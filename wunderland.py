@@ -148,7 +148,7 @@ class WunderlandEntity:
         self.position = position
         self.facing_right = False    # initially all images are facing left
         self.target_position = None
-        self.timeout = None
+        self.timeout = 0
         
         self.flip_img(facing_right=facing_right)
 
@@ -173,8 +173,7 @@ class WunderlandEntity:
 
     def move(self, delta_time: float):
         if not self.target_position:
-            self.target_position = self.wunderland.get_random_position(True, self.position, radius=200)
-            self.timeout = 0
+            self.target_position = self.wunderland.get_random_position(True, origin=self.position, radius=200)
 
         dist = delta_time * 10
         if self.timeout <= 0:
@@ -189,5 +188,5 @@ class WunderlandEntity:
 
         if math.dist(self.position, self.target_position) < 10:
             self.timeout = random.random() * 15 + 5
-            self.target_position = self.wunderland.get_random_position(True, self.position, radius=200)
+            self.target_position = self.wunderland.get_random_position(True, origin=self.position, radius=200)
         
