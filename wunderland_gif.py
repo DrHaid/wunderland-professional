@@ -19,10 +19,14 @@ def save_teamsbg(thumb: Image, gif_file: str):
     img_thumb = thumb.resize((280, 158))
     bgthumb_path = os.path.join(dir, "wunderland_gif_thumb.png")
     img_thumb.save(bgthumb_path)
-    os.rename(gif_file, os.path.join(dir, "wunderland_gif.png"))
+    try:
+        os.rename(gif_file, os.path.join(dir, "wunderland_gif.png"))
+    except FileExistsError:
+        os.remove(os.path.join(dir, "wunderland_gif.png"))
+        os.rename(gif_file, os.path.join(dir, "wunderland_gif.png"))
     print("Microsoft Teams background saved")
 
-LENGTH = 1000
+LENGTH = 2000
 
 def main():
     wunderland = Wunderland()
@@ -33,7 +37,7 @@ def main():
 
     frames = []
     for x in range(int(LENGTH / 2)):
-        wunderland.do_animation_step(delta_time=0.025) # ~25fps
+        wunderland.do_animation_step(delta_time=0.04)
         wunderland_frame = wunderland.get_frame()
         frames.append(wunderland_frame)
 
