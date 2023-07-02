@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+from io import BytesIO
 import os
 import math
 import random
@@ -9,6 +10,7 @@ from PIL import Image, ImageOps
 from sys import platform
 from pywal import wallpaper
 from wunderland import Wunderland
+from wunderland_gif_generator import WunderlandGIFGenerator
 
 
 def get_teamsbg_path():
@@ -25,6 +27,25 @@ def save_teamsbg(img: Image):
     img.save(bg_path)
     img_thumb.save(bgthumb_path)
     print("Microsoft Teams background saved")
+
+def save_animated_teamsbg(gif: BytesIO):
+    if platform != "win32":
+        print("Microsoft Teams background only supported on Windows :(")
+        return
+    dir = get_teamsbg_path()
+    thumb = BytesIO()
+    thumb.write(gif.read(1))
+    prev = Image.open(thumb)
+    prev.show()
+    # img_thumb = thumb.resize((280, 158))
+    # bgthumb_path = os.path.join(dir, "wunderland_gif_thumb.png")
+    # img_thumb.save(bgthumb_path)
+    # try:
+    #     os.rename(gif_file, os.path.join(dir, "wunderland_gif.png"))
+    # except FileExistsError:
+    #     os.remove(os.path.join(dir, "wunderland_gif.png"))
+    #     os.rename(gif_file, os.path.join(dir, "wunderland_gif.png"))
+    # print("Microsoft Teams background saved")
 
 def set_wallpaper(img: Image):
     dir = tempfile.gettempdir()
@@ -96,6 +117,7 @@ def place_online_images(wunderland: Wunderland, count: int):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', '--teams', action='store_true', dest='teams', help='Saves Wunderland as Microsoft Teams background')
+    parser.add_argument('-g', '--gif', action='store_true', dest='gif', help='Generates an animated Wunderland and saves it as Microsoft Teams background')
     parser.add_argument('-d', '--desktop', action='store_true', dest='desktop', help='Sets Wunderland as Desktop wallpaper')
     parser.add_argument('-f', '--file', type=str, dest='filepath', default=None, help='Save the Wunderland in a specified file path')
     parser.add_argument('-c', '--cows', type=int, dest='cow_count', default=6, help='Define how many cows populate the Wunderland')
@@ -104,7 +126,6 @@ def main():
     args = parser.parse_args()
 
     wunderland = Wunderland(location_overwrite=args.location)
-    wunderland.get_online_images(5)
 
     # place cows
     if args.online:
@@ -113,6 +134,11 @@ def main():
         place_images(wunderland=wunderland, img_name="cow", count=args.cow_count)
     
     frame = wunderland.get_frame()
+
+    if args.gif:
+        gif_gen = WunderlandGIFGenerator(wunderland=wunderland)
+        gif = gif_gen.generate_gif(2000)
+        save_animated_teamsbg(gif)
 
     if args.teams:
         save_teamsbg(frame)
