@@ -1,12 +1,9 @@
-#! /usr/bin/env python
-from io import BytesIO
 import os
-import math
 import random
 import tempfile
 import ctypes
 import argparse
-from PIL import Image, ImageOps
+from PIL import Image
 from sys import platform
 from pywal import wallpaper
 from wunderland import Wunderland
@@ -28,24 +25,20 @@ def save_teamsbg(img: Image):
     img_thumb.save(bgthumb_path)
     print("Microsoft Teams background saved")
 
-def save_animated_teamsbg(gif: BytesIO):
+def save_animated_teamsbg(gif_gen: WunderlandGIFGenerator):
     if platform != "win32":
         print("Microsoft Teams background only supported on Windows :(")
         return
     dir = get_teamsbg_path()
-    thumb = BytesIO()
-    thumb.write(gif.read(1))
-    prev = Image.open(thumb)
-    prev.show()
-    # img_thumb = thumb.resize((280, 158))
-    # bgthumb_path = os.path.join(dir, "wunderland_gif_thumb.png")
-    # img_thumb.save(bgthumb_path)
-    # try:
-    #     os.rename(gif_file, os.path.join(dir, "wunderland_gif.png"))
-    # except FileExistsError:
-    #     os.remove(os.path.join(dir, "wunderland_gif.png"))
-    #     os.rename(gif_file, os.path.join(dir, "wunderland_gif.png"))
-    # print("Microsoft Teams background saved")
+    img_thumb = gif_gen.get_frame(0).resize((280, 158))
+    bgthumb_path = os.path.join(dir, "wunderland_gif_thumb.png")
+    img_thumb.save(bgthumb_path)
+
+    bggif_path = os.path.join(dir, "wunderland_gif.gif")
+    gif_gen.save_gif(bggif_path)
+    pre, _ = os.path.splitext(bggif_path)
+    os.replace(bggif_path, pre + ".png")
+    print("Animated Microsoft Teams background saved")
 
 def set_wallpaper(img: Image):
     dir = tempfile.gettempdir()
@@ -137,8 +130,8 @@ def main():
 
     if args.gif:
         gif_gen = WunderlandGIFGenerator(wunderland=wunderland)
-        gif = gif_gen.generate_gif(2000)
-        save_animated_teamsbg(gif)
+        gif_gen.generate_gif_frames(1000)
+        save_animated_teamsbg(gif_gen)
 
     if args.teams:
         save_teamsbg(frame)

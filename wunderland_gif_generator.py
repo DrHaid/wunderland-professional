@@ -1,9 +1,5 @@
-#! /usr/bin/env python
-import os
 import random
-import tempfile
 from PIL import Image
-from io import BytesIO
 
 from wunderland import Wunderland
 
@@ -21,7 +17,7 @@ class WunderlandGIFGenerator():
             init_timeout = 0 if (e % 2 == 0) else random.random() * 3
             self.wunderland.wunderland_entities[e].timeout = init_timeout
 
-    def generate_gif(self, gif_length: int) -> BytesIO:
+    def generate_gif_frames(self, gif_length: int):
         self.frames = []
 
         for x in range(int(gif_length / 2)):
@@ -33,9 +29,10 @@ class WunderlandGIFGenerator():
         frames_reversed = self.frames.copy()
         frames_reversed.reverse()
         self.frames = self.frames + frames_reversed
+   
+    def get_frame(self, index: int = 0) -> Image:
+        i = max(0, min(index, len(self.frames) - 1))
+        return self.frames[i]
 
-        gif = BytesIO()
-        self.frames[0].save(gif, format='GIF', append_images=self.frames, save_all=True, duration=0.04) # TODO: pallete optimization
-        gif.seek(0)
-
-        return gif
+    def save_gif(self, path: str):
+        self.frames[0].save(path, format='GIF', append_images=self.frames, save_all=True, duration=0.04) # TODO: pallete optimization
