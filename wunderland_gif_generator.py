@@ -3,22 +3,22 @@ from PIL import Image
 
 from wunderland import Wunderland
 
-DELTA_TIME = 0.04
+DELTA_TIME = 0.07
 
 class WunderlandGIFGenerator():
     def __init__(self, wunderland: Wunderland):
         self.wunderland = wunderland
         self.frames = []
-        self._init_animator()
 
-    def _init_animator(self):
+    def _init_animator(self, gif_length: int):
         for e in range(len(self.wunderland.wunderland_entities)):
             # set initial timeout for every other entity to delay their movement
-            init_timeout = 0 if (e % 2 == 0) else random.random() * 3
+            init_timeout = 0 if (e % 2 == 0) else random.random() * ((gif_length / 2) / 3)
             self.wunderland.wunderland_entities[e].timeout = init_timeout
 
     def generate_gif_frames(self, gif_length: int):
         self.frames = []
+        self._init_animator(gif_length)
 
         for x in range(int(gif_length / 2)):
             self.wunderland.do_animation_step(delta_time=DELTA_TIME)
@@ -35,4 +35,4 @@ class WunderlandGIFGenerator():
         return self.frames[i]
 
     def save_gif(self, path: str):
-        self.frames[0].save(path, format='GIF', append_images=self.frames, save_all=True, duration=0.04) # TODO: pallete optimization
+        self.frames[0].save(path, format='GIF', append_images=self.frames, save_all=True, duration=50) # TODO: pallete optimization
