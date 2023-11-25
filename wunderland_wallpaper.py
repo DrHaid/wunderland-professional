@@ -109,12 +109,12 @@ def place_online_images(wunderland: Wunderland, count: int):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('-a', '--animated', action='store_true', dest='animated', help='Generates an animated Wunderland')
     parser.add_argument('-t', '--teams', action='store_true', dest='teams', help='Saves Wunderland as Microsoft Teams background')
-    parser.add_argument('-a', '--animated-teams', action='store_true', dest='animated', help='Generates an animated Wunderland and saves it as Microsoft Teams background')
     parser.add_argument('-d', '--desktop', action='store_true', dest='desktop', help='Sets Wunderland as Desktop wallpaper')
-    parser.add_argument('-f', '--file', type=str, dest='filepath', default=None, help='Save the Wunderland in a specified file path')
+    parser.add_argument('-p', '--out-path', type=str, dest='path', default=None, help='Save the Wunderland in a specified directory')
     parser.add_argument('-c', '--cows', type=int, dest='cow_count', default=6, help='Define how many cows populate the Wunderland')
-    parser.add_argument('-o', '--online', action='store_true', dest='online', help='Use custom drawn cows from API')
+    parser.add_argument('-o', '--online', action='store_true', dest='online', help='Use custom drawings from API')
     parser.add_argument('-l', '--location', type=str, dest='location', default=None, help='Overwrite the location for the current weather')
     args = parser.parse_args()
 
@@ -126,18 +126,38 @@ def main():
     else:    
         place_images(wunderland=wunderland, img_name="cow", count=args.cow_count)
     
+    # generate wunderland
+    gif_gen = None
+    frame = None
     if args.animated:
         gif_gen = WunderlandGIFGenerator(wunderland=wunderland)
         gif_gen.generate_gif_frames(1000)
-        save_animated_teamsbg(gif_gen)
+    else:
+        frame = wunderland.get_frame()
     
-    frame = wunderland.get_frame()
+    # saving
     if args.teams:
-        save_teamsbg(frame)
+        if args.animated:
+            save_animated_teamsbg(gif_gen)
+        else:
+            save_teamsbg(frame)
+
     if args.desktop:
-        set_wallpaper(frame)
-    if args.filepath:
-        frame.save(args.filepath)
+        if args.animated:
+            print('The animated Wunderland cannot be set as desktop wallpaper :(')
+        else:
+            set_wallpaper(frame)
+
+    if args.path:
+        path = args.path
+        if not os.path.isdir(path):
+            print('Cannot save Wunderland because given path is not a directory.')
+            return
+        
+        if args.animated:
+            gif_gen.save_gif(os.path.join(path, "wunderland.gif"))
+        else:
+            frame.save(os.path.join(path, "wunderland.png"))
 
 
 if __name__ == "__main__":
