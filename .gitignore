@@ -131,3 +131,5 @@ dmypy.json
 # local webcam test files
 /Install
 webcam.mp4
+wunderland.png
+wunderland.gif
