@@ -11,6 +11,7 @@ pillow = "*"
 pyvirtualcam = "*"
 pywal = "*"
 requests = "*"
+gooey = "*"
 
 [dev-packages]
 

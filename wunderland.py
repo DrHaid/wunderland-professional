@@ -1,3 +1,4 @@
+import logging
 import os
 import random
 import math
@@ -43,6 +44,7 @@ class Wunderland:
     Get custom drawn cows from API.
     """
     def get_online_images(self, count: int):
+        logging.info("Requesting online drawings from server")
         response = requests.get(f'https://drhaid.com/api/cows/random/{count}')
         data = json.loads(response.content)
         return [self.get_image_from_base64(cow["image_data"].replace("data:image/png;base64,", "")) for cow in data]
@@ -51,6 +53,7 @@ class Wunderland:
     Get weather for current IP using wttr.in (https://github.com/chubin/wttr.in)  
     """
     def get_weather(self, weather_str: str = None, location_overwrite: str = None) -> Weather:
+        logging.info("Requesting current weather from http://wttr.in/")
         location = "" if not location_overwrite else location_overwrite
         response = requests.get(f'http://wttr.in/{location}?format=%c')
         w = response.content.decode("utf-8").strip() if not weather_str else weather_str
@@ -61,7 +64,7 @@ class Wunderland:
     Get random position on wunderland.
     """
     def get_random_position(self, grounded: bool, padding: Tuple = (0, 0, 0, 0), origin: Tuple = None, radius: int = None) -> Tuple:
-        def max(a, b):
+        def max(a, b): #TODO: lambdas?
             if a >= b:
                 return a
             else:

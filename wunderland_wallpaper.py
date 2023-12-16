@@ -2,9 +2,10 @@ import os
 import random
 import tempfile
 import ctypes
-import argparse
+import logging
 from PIL import Image
 from sys import platform
+from gooey import Gooey, GooeyParser
 from pywal import wallpaper
 from wunderland import Wunderland
 from wunderland_gif_generator import WunderlandGIFGenerator
@@ -15,20 +16,21 @@ def get_teamsbg_path():
 
 def save_teamsbg(img: Image):
     if platform != "win32":
-        print("Microsoft Teams background only supported on Windows :(")
+        logging.error("Microsoft Teams background only supported on Windows :(")
         return
+    logging.info("Saving Microsoft Teams background")
     dir = get_teamsbg_path()
     img_thumb = img.resize((280, 158))
     bg_path = os.path.join(dir, "wunderland.png")
     bgthumb_path = os.path.join(dir, "wunderland_thumb.png")
     img.save(bg_path)
     img_thumb.save(bgthumb_path)
-    print("Microsoft Teams background saved")
 
 def save_animated_teamsbg(gif_gen: WunderlandGIFGenerator):
     if platform != "win32":
-        print("Microsoft Teams background only supported on Windows :(")
+        logging.error("Microsoft Teams background only supported on Windows :(")
         return
+    logging.info("Setting animated Microsoft Teams background")
     dir = get_teamsbg_path()
     img_thumb = gif_gen.get_frame(0).resize((280, 158))
     bgthumb_path = os.path.join(dir, "wunderland_gif_thumb.png")
@@ -38,9 +40,9 @@ def save_animated_teamsbg(gif_gen: WunderlandGIFGenerator):
     gif_gen.save_gif(bggif_path)
     pre, _ = os.path.splitext(bggif_path)
     os.replace(bggif_path, pre + ".png")
-    print("Animated Microsoft Teams background saved")
 
 def set_wallpaper(img: Image):
+    logging.info("Setting desktop wallpaper")
     dir = tempfile.gettempdir()
     path = os.path.join(dir, "wunderland.bmp")
     img.save(path)
@@ -55,7 +57,6 @@ def set_wallpaper(img: Image):
             set_kde_wallpaper(path)
         else:
             wallpaper.set_desktop_wallpaper(desktop, path)
-    print("Desktop wallpaper set")
 
 """
 special workaround for kde
@@ -107,32 +108,49 @@ def place_online_images(wunderland: Wunderland, count: int):
     if (leftovers) >= 0:
         place_images(wunderland=wunderland, img_name="cow", count=leftovers)
 
+@Gooey(default_size=(635, 585),
+       program_name='Wunderland Generator',
+       program_description='Generate Wunderland desktop wallpaper and/or Microsoft Teams background',
+       image_dir='gui')
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-a', '--animated', action='store_true', dest='animated', help='Generates an animated Wunderland')
-    parser.add_argument('-t', '--teams', action='store_true', dest='teams', help='Saves Wunderland as Microsoft Teams background')
-    parser.add_argument('-d', '--desktop', action='store_true', dest='desktop', help='Sets Wunderland as Desktop wallpaper')
-    parser.add_argument('-p', '--out-path', type=str, dest='path', default=None, help='Save the Wunderland in a specified directory')
-    parser.add_argument('-c', '--cows', type=int, dest='cow_count', default=6, help='Define how many cows populate the Wunderland')
-    parser.add_argument('-o', '--online', action='store_true', dest='online', help='Use custom drawings from API')
-    parser.add_argument('-l', '--location', type=str, dest='location', default=None, help='Overwrite the location for the current weather')
+    logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S', format='[%(asctime)s]: %(message)s', level=logging.INFO)
+
+    parser = GooeyParser()
+    parser.add_argument('-t', '--teams', action='store_true', dest='teams', help='Saves Wunderland as Microsoft Teams background', metavar='MS Teams background')
+    parser.add_argument('-d', '--desktop', action='store_true', dest='desktop', help='Sets Wunderland as Desktop wallpaper', metavar='Desktop wallpaper')
+    parser.add_argument('-o', '--online', action='store_true', dest='online', help='Use custom drawings from API', metavar='Online drawings')
+    parser.add_argument('-c', '--count', type=int, dest='drawing_count', default=6, help='Define how many drawings populate the Wunderland', metavar='Drawing count', widget='IntegerField')
+    parser.add_argument('-a', '--animated', action='store_true', dest='animated', help='Generates an animated Wunderland', metavar='Animate image')
+    parser.add_argument('-l', '--location', type=str, dest='location', default=None, help='Overwrite the location for the current weather', metavar='Weather location')
+    parser.add_argument('-p', '--out-path', type=str, dest='path', default=None, help='Save the Wunderland in a specified directory', metavar='Target directory', widget='DirChooser')
     args = parser.parse_args()
+
+    logging.info("------------------------------")
+    logging.info("------ Starting process ------")
+
+    if not (args.teams or args.desktop or args.path):
+        logging.warning('⚠️ No saving method selected. No Wunderland will be generated')
+        return
 
     wunderland = Wunderland(location_overwrite=args.location)
 
     # place cows
     if args.online:
-        place_online_images(wunderland=wunderland, count=args.cow_count)
+        logging.info("Populating the Wunderland with %s online drawings", args.drawing_count)
+        place_online_images(wunderland=wunderland, count=args.drawing_count)
     else:    
-        place_images(wunderland=wunderland, img_name="cow", count=args.cow_count)
+        logging.info("Populating the Wunderland with %s cows", args.drawing_count)
+        place_images(wunderland=wunderland, img_name="cow", count=args.drawing_count)
     
     # generate wunderland
     gif_gen = None
     frame = None
     if args.animated:
+        logging.info("Generating animated Wunderland")
         gif_gen = WunderlandGIFGenerator(wunderland=wunderland)
         gif_gen.generate_gif_frames(1000)
     else:
+        logging.info("Generating Wunderland")
         frame = wunderland.get_frame()
     
     # saving
@@ -144,21 +162,23 @@ def main():
 
     if args.desktop:
         if args.animated:
-            print('The animated Wunderland cannot be set as desktop wallpaper :(')
+            logging.error('The animated Wunderland cannot be set as desktop wallpaper :(')
         else:
             set_wallpaper(frame)
 
     if args.path:
         path = args.path
         if not os.path.isdir(path):
-            print('Cannot save Wunderland because given path is not a directory.')
+            logging.error('Cannot save Wunderland because given path is not a directory')
             return
         
+        logging.info("Saving as image to '%s'", path)
         if args.animated:
             gif_gen.save_gif(os.path.join(path, "wunderland.gif"))
         else:
             frame.save(os.path.join(path, "wunderland.png"))
 
+    logging.info("------ Process finished ------")
 
 if __name__ == "__main__":
     main()
