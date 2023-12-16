@@ -5,7 +5,7 @@ import ctypes
 import logging
 from PIL import Image
 from sys import platform
-from gooey import Gooey, GooeyParser
+from gooey import Gooey, GooeyParser, local_resource_path
 from pywal import wallpaper
 from wunderland import Wunderland
 from wunderland_gif_generator import WunderlandGIFGenerator
@@ -119,7 +119,7 @@ def place_online_images(wunderland: Wunderland, count: int):
 @Gooey(default_size=(635, 585),
        program_name='Wunderland Generator',
        program_description='Generate Wunderland desktop wallpaper and/or Microsoft Teams background',
-       image_dir='gui')
+       image_dir=local_resource_path('gui'))
 def main():
     logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
                         format='[%(asctime)s]: %(message)s', level=logging.INFO)
