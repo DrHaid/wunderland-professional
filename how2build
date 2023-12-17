@@ -1,1 +1,0 @@
-pyinstaller -F --add-data 'img/*;img' wunderland_wallpaper.py

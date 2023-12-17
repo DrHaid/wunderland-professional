@@ -1,3 +1,4 @@
+from enum import Enum
 import logging
 import os
 import random
@@ -10,30 +11,37 @@ import requests
 from PIL import Image, ImageOps
 
 
-class Weather:
-    def __init__(self, emoji, name, overlay):
+class WeatherData:
+    def __init__(self, display_name, emoji, img_name, overlay):
+        self.display_name = display_name
         self.emoji = emoji
-        self.name = name
+        self.img_name = img_name
         self.overlay = overlay
 
 
-class Wunderland:
+class Weather(Enum):
     # Emojis seem to give autopep8 a stroke (understandably)
     # autopep8: off
-    WEATHER_MAP = [
-        Weather("☀️", "sunny", ""), # sunny
-        Weather("☁️", "cloudy", ""), # cloudy
-        Weather("⛅️", "partlycloudy", ""), # partly cloudy
-        Weather("⛈", "stormy", "rainy"), # thunder + rain
-        Weather("🌦", "cloudy", "rainy"), # partly cloudy + rain
-        Weather("🌧", "rainy", "rainy"), # rainy
-        Weather("🌨", "cloudy", "snowy"), # light snow
-        Weather("❄️", "snowy", "snowy"), # snowy
-        Weather("🌩", "stormy", ""), # thunder
-        Weather("🌫", "cloudy", "foggy") # foggy
-    ]
+    SUNNY = WeatherData("Sunny", "☀️", "sunny", "") # sunny
+    CLOUDY = WeatherData("Cloudy", "☁️", "cloudy", "") # cloudy
+    PARTLY_CLOUDY = WeatherData("Partly cloudy", "⛅️", "partlycloudy", "") # partly cloudy
+    THUNDERSTORM = WeatherData("Thunderstorm", "⛈", "stormy", "rainy") # thunder + rain
+    LIGHT_RAIN = WeatherData("Light rain", "🌦", "cloudy", "rainy") # partly cloudy + rain
+    RAINY = WeatherData("Rainy", "🌧", "rainy", "rainy") # rainy
+    LIGHT_SNOW = WeatherData("Light snow", "🌨", "cloudy", "snowy") # light snow
+    SNOWY = WeatherData("Snowy", "❄️", "snowy", "snowy") # snowy
+    STORMY = WeatherData("Stormy", "🌩", "stormy", "") # thunder
+    FOGGY = WeatherData("Foggy", "🌫", "cloudy", "foggy") # foggy
     # autopep8: on
 
+    def get_display_names():
+        return [w.value.display_name for w in Weather]
+
+    def get_by_attr(attr: str, value: str):
+        return [w.value for w in Weather if getattr(w.value, attr) == value][0]
+
+
+class Wunderland:
     def get_image_from_name(self, img_name: str):
         return Image.open(f'{self.ROOT_DIR}/img/{img_name}.png')
 
@@ -53,33 +61,22 @@ class Wunderland:
         data = json.loads(response.content)
         return [self.get_image_from_base64(cow["image_data"].replace("data:image/png;base64,", "")) for cow in data]
 
-    def get_weather(self, weather_str: str = None, location_overwrite: str = None) -> Weather:
+    def get_current_weather(self) -> Weather:
         """
         Get weather for current IP using wttr.in (https://github.com/chubin/wttr.in)  
         """
         logging.info("Requesting current weather from http://wttr.in/")
-        location = "" if not location_overwrite else location_overwrite
-        response = requests.get(f'http://wttr.in/{location}?format=%c')
-        w = response.content.decode(
-            "utf-8").strip() if not weather_str else weather_str
-        weather = [x for x in self.WEATHER_MAP if x.emoji == w]
-        return weather[0]
+        response = requests.get(f'http://wttr.in/?format=%c')
+        w = response.content.decode("utf-8").strip()
+        weather = Weather.get_by_attr("emoji", w)
+        return weather
 
     def get_random_position(self, grounded: bool, padding: Tuple = (0, 0, 0, 0), origin: Tuple = None, radius: int = None) -> Tuple:
         """
         Get random position on wunderland.
         """
-        def max(a, b):  # TODO: lambdas?
-            if a >= b:
-                return a
-            else:
-                return b
-
-        def min(a, b):
-            if a < b:
-                return a
-            else:
-                return b
+        def max(a, b): return a if a >= b else b
+        def min(a, b): return a if a < b else b
 
         if origin:
             x_min = int(max(origin[0] - radius, 0 + padding[0]))
@@ -149,11 +146,12 @@ class Wunderland:
         for entity in self.wunderland_entities:
             entity.move(delta_time)
 
-    def __init__(self, weather_str=None, location_overwrite=None):
+    def __init__(self, weather=None):
         self.ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-        self.weather = self.get_weather(weather_str, location_overwrite)
+        self.weather = Weather.get_by_attr(
+            "display_name", weather) if weather else self.get_current_weather()
         self.BG_IMG = Image.open(
-            f'{self.ROOT_DIR}/img/wallpaper_{self.weather.name}.png')
+            f'{self.ROOT_DIR}/img/wallpaper_{self.weather.img_name}.png')
         self.wunderland_entities = []
 
 

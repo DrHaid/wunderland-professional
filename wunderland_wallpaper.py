@@ -7,7 +7,7 @@ from PIL import Image
 from sys import platform
 from gooey import Gooey, GooeyParser, local_resource_path
 from pywal import wallpaper
-from wunderland import Wunderland
+from wunderland import Weather, Wunderland
 from wunderland_gif_generator import WunderlandGIFGenerator
 
 
@@ -135,8 +135,8 @@ def main():
                         help='Define how many drawings populate the Wunderland', metavar='Drawing count', widget='IntegerField')
     parser.add_argument('-a', '--animated', action='store_true', dest='animated',
                         help='Generates an animated Wunderland', metavar='Animate image')
-    parser.add_argument('-l', '--location', type=str, dest='location', default=None,
-                        help='Overwrite the location for the current weather', metavar='Weather location')
+    parser.add_argument('-w', '--weather', type=str, dest='weather', default=None,
+                        help='Set custom weather instead of current location', metavar='Weather overwrite', choices=Weather.get_display_names())
     parser.add_argument('-p', '--out-path', type=str, dest='path', default=None,
                         help='Save the Wunderland in a specified directory', metavar='Target directory', widget='DirChooser')
     args = parser.parse_args()
@@ -149,7 +149,7 @@ def main():
             '⚠️ No saving method selected. No Wunderland will be generated')
         return
 
-    wunderland = Wunderland(location_overwrite=args.location)
+    wunderland = Wunderland(weather=args.weather)
 
     # place cows
     if args.online:
