@@ -1,5 +1,6 @@
 import os
 import random
+import sys
 import tempfile
 import ctypes
 import logging
@@ -116,6 +117,12 @@ def place_online_images(wunderland: Wunderland, count: int):
         place_images(wunderland=wunderland, img_name="cow", count=leftovers)
 
 
+# Kinda hacky. Ignore Gooey if run with args on commandline.
+if len(sys.argv) >= 2:
+    if not '--ignore-gooey' in sys.argv:
+        sys.argv.append('--ignore-gooey')
+
+
 @Gooey(default_size=(635, 585),
        program_name='Wunderland Generator',
        program_description='Generate Wunderland desktop wallpaper and/or Microsoft Teams background',
@@ -125,20 +132,21 @@ def main():
                         format='[%(asctime)s]: %(message)s', level=logging.INFO)
 
     parser = GooeyParser()
-    parser.add_argument('-t', '--teams', action='store_true', dest='teams',
-                        help='Saves Wunderland as Microsoft Teams background', metavar='MS Teams background')
-    parser.add_argument('-d', '--desktop', action='store_true', dest='desktop',
-                        help='Sets Wunderland as Desktop wallpaper', metavar='Desktop wallpaper')
-    parser.add_argument('-o', '--online', action='store_true', dest='online',
-                        help='Use custom drawings from API', metavar='Online drawings')
-    parser.add_argument('-c', '--count', type=int, dest='drawing_count', default=6,
-                        help='Define how many drawings populate the Wunderland', metavar='Drawing count', widget='IntegerField')
-    parser.add_argument('-a', '--animated', action='store_true', dest='animated',
-                        help='Generates an animated Wunderland', metavar='Animate image')
-    parser.add_argument('-w', '--weather', type=str, dest='weather', default=None,
-                        help='Set custom weather instead of current location', metavar='Weather overwrite', choices=Weather.get_display_names())
-    parser.add_argument('-p', '--out-path', type=str, dest='path', default=None,
-                        help='Save the Wunderland in a specified directory', metavar='Target directory', widget='DirChooser')
+    group = parser.add_argument_group('Settings')
+    group.add_argument('-t', '--teams', action='store_true', dest='teams',
+                       help='Saves Wunderland as Microsoft Teams background', metavar='MS Teams background')
+    group.add_argument('-d', '--desktop', action='store_true', dest='desktop',
+                       help='Sets Wunderland as Desktop wallpaper', metavar='Desktop wallpaper')
+    group.add_argument('-o', '--online', action='store_true', dest='online',
+                       help='Use custom drawings from API', metavar='Online drawings')
+    group.add_argument('-c', '--count', type=int, dest='drawing_count', default=6,
+                       help='Define how many drawings populate the Wunderland', metavar='Drawing count', widget='IntegerField')
+    group.add_argument('-a', '--animated', action='store_true', dest='animated',
+                       help='Generates an animated Wunderland', metavar='Animate image')
+    group.add_argument('-w', '--weather', type=str, dest='weather', default=None,
+                       help='Set custom weather instead of current location', metavar='Weather overwrite', choices=Weather.get_display_names())
+    group.add_argument('-p', '--out-path', type=str, dest='path', default=None,
+                       help='Save the Wunderland in a specified directory', metavar='Target directory', widget='DirChooser')
     args = parser.parse_args()
 
     logging.info("------------------------------")
