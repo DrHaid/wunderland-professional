@@ -22,16 +22,16 @@ class WeatherData:
 class Weather(Enum):
     # Emojis seem to give autopep8 a stroke (understandably)
     # autopep8: off
-    SUNNY = WeatherData("Sunny", "☀️", "sunny", "") # sunny
-    CLOUDY = WeatherData("Cloudy", "☁️", "cloudy", "") # cloudy
-    PARTLY_CLOUDY = WeatherData("Partly cloudy", "⛅️", "partlycloudy", "") # partly cloudy
-    THUNDERSTORM = WeatherData("Thunderstorm", "⛈", "stormy", "rainy") # thunder + rain
-    LIGHT_RAIN = WeatherData("Light rain", "🌦", "cloudy", "rainy") # partly cloudy + rain
-    RAINY = WeatherData("Rainy", "🌧", "rainy", "rainy") # rainy
-    LIGHT_SNOW = WeatherData("Light snow", "🌨", "cloudy", "snowy") # light snow
-    SNOWY = WeatherData("Snowy", "❄️", "snowy", "snowy") # snowy
-    STORMY = WeatherData("Stormy", "🌩", "stormy", "") # thunder
-    FOGGY = WeatherData("Foggy", "🌫", "cloudy", "foggy") # foggy
+    SUNNY = WeatherData('Sunny', '☀️', 'sunny', '') # sunny
+    CLOUDY = WeatherData('Cloudy', '☁️', 'cloudy', '') # cloudy
+    PARTLY_CLOUDY = WeatherData('Partly cloudy', '⛅️', 'partlycloudy', '') # partly cloudy
+    THUNDERSTORM = WeatherData('Thunderstorm', '⛈', 'stormy', 'rainy') # thunder + rain
+    LIGHT_RAIN = WeatherData('Light rain', '🌦', 'cloudy', 'rainy') # partly cloudy + rain
+    RAINY = WeatherData('Rainy', '🌧', 'rainy', 'rainy') # rainy
+    LIGHT_SNOW = WeatherData('Light snow', '🌨', 'cloudy', 'snowy') # light snow
+    SNOWY = WeatherData('Snowy', '❄️', 'snowy', 'snowy') # snowy
+    STORMY = WeatherData('Stormy', '🌩', 'stormy', '') # thunder
+    FOGGY = WeatherData('Foggy', '🌫', 'cloudy', 'foggy') # foggy
     # autopep8: on
 
     def get_display_names():
@@ -53,29 +53,29 @@ class Wunderland:
         return img
 
     def get_online_images(self, count: int):
-        """
+        '''
         Get custom drawn cows from API.
-        """
+        '''
         try:
-            logging.info("Requesting online drawings from server")
+            logging.info('Requesting online drawings from server')
             response = requests.get(
                 f'https://drhaid.com/api/cows/random/{count}')
             data = json.loads(response.content)
-            return [self.get_image_from_base64(cow["image_data"].replace("data:image/png;base64,", "")) for cow in data]
+            return [self.get_image_from_base64(cow['image_data'].replace('data:image/png;base64,', '')) for cow in data]
         except Exception as e:
             logging.error(
                 'An error occured while trying to fetch the online drawings')
             raise e
 
     def get_current_weather(self) -> Weather:
-        """
+        '''
         Get weather for current IP using wttr.in (https://github.com/chubin/wttr.in)  
-        """
+        '''
         try:
-            logging.info("Requesting current weather from http://wttr.in/")
+            logging.info('Requesting current weather from http://wttr.in/')
             response = requests.get(f'http://wttr.in/?format=%c')
-            w = response.content.decode("utf-8").strip()
-            weather = Weather.get_by_attr("emoji", w)
+            w = response.content.decode('utf-8').strip()
+            weather = Weather.get_by_attr('emoji', w)
             return weather
         except Exception as e:
             logging.error(
@@ -83,9 +83,9 @@ class Wunderland:
             raise e
 
     def get_random_position(self, grounded: bool, padding: Tuple = (0, 0, 0, 0), origin: Tuple = None, radius: int = None) -> Tuple:
-        """
+        '''
         Get random position on wunderland.
-        """
+        '''
         def max(a, b): return a if a >= b else b
         def min(a, b): return a if a < b else b
 
@@ -118,9 +118,9 @@ class Wunderland:
         return (x, y)
 
     def add_entity(self, wunderland, image: Image, position: Tuple, facing_right: bool, color: str = None):
-        """
+        '''
         Add a WunderlandEntity to this Wunderland instance 
-        """
+        '''
         entity = WunderlandEntity(
             wunderland=wunderland,
             image=image, position=position,
@@ -129,9 +129,9 @@ class Wunderland:
         self.wunderland_entities.append(entity)
 
     def get_frame(self) -> Image:
-        """
+        '''
         Render frame of the Wunderland.
-        """
+        '''
         self.wunderland_entities.sort(key=lambda x: x.position[1])
         frame = self.BG_IMG.copy()
 
@@ -151,9 +151,9 @@ class Wunderland:
         return frame
 
     def do_animation_step(self, delta_time: float):
-        """
+        '''
         Update all WunderlandEntity positions. delta_time is time since last update.
-        """
+        '''
         for entity in self.wunderland_entities:
             entity.move(delta_time)
 
@@ -166,7 +166,7 @@ class Wunderland:
                 logging.info('Falling back to using weather "Partly cloudy"')
                 self.weather = Weather.PARTLY_CLOUDY.value
         else:
-            self.weather = Weather.get_by_attr("display_name", weather)
+            self.weather = Weather.get_by_attr('display_name', weather)
 
         self.ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
         self.BG_IMG = Image.open(
@@ -186,9 +186,9 @@ class WunderlandEntity:
         self.flip_img(facing_right=facing_right)
 
     def tint_image(self, src: Image, color: str) -> Image:
-        """
+        '''
         Tint input image using hex color.
-        """
+        '''
         src.load()
         r, g, b, alpha = src.split()
         gray = ImageOps.grayscale(src)
@@ -197,9 +197,9 @@ class WunderlandEntity:
         return result
 
     def flip_img(self, facing_right: bool):
-        """
+        '''
         Change image facing direction.
-        """
+        '''
         if self.facing_right != facing_right:
             self.image = ImageOps.mirror(self.image)
             self.facing_right = facing_right

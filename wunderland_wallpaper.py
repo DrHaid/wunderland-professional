@@ -17,60 +17,60 @@ def get_teamsbg_path():
 
 
 def save_teamsbg(img: Image):
-    if platform != "win32":
+    if platform != 'win32':
         logging.error(
-            "Microsoft Teams background only supported on Windows :(")
+            'Microsoft Teams background only supported on Windows :(')
         return
-    logging.info("Saving Microsoft Teams background")
+    logging.info('Saving Microsoft Teams background')
     dir = get_teamsbg_path()
     img_thumb = img.resize((280, 158))
-    bg_path = os.path.join(dir, "wunderland.png")
-    bgthumb_path = os.path.join(dir, "wunderland_thumb.png")
+    bg_path = os.path.join(dir, 'wunderland.png')
+    bgthumb_path = os.path.join(dir, 'wunderland_thumb.png')
     img.save(bg_path)
     img_thumb.save(bgthumb_path)
 
 
 def save_animated_teamsbg(gif_gen: WunderlandGIFGenerator):
-    if platform != "win32":
+    if platform != 'win32':
         logging.error(
-            "Microsoft Teams background only supported on Windows :(")
+            'Microsoft Teams background only supported on Windows :(')
         return
-    logging.info("Setting animated Microsoft Teams background")
+    logging.info('Setting animated Microsoft Teams background')
     dir = get_teamsbg_path()
     img_thumb = gif_gen.get_frame(0).resize((280, 158))
-    bgthumb_path = os.path.join(dir, "wunderland_gif_thumb.png")
+    bgthumb_path = os.path.join(dir, 'wunderland_gif_thumb.png')
     img_thumb.save(bgthumb_path)
 
-    bggif_path = os.path.join(dir, "wunderland_gif.gif")
+    bggif_path = os.path.join(dir, 'wunderland_gif.gif')
     gif_gen.save_gif(bggif_path)
     pre, _ = os.path.splitext(bggif_path)
-    os.replace(bggif_path, pre + ".png")
+    os.replace(bggif_path, pre + '.png')
 
 
 def set_wallpaper(img: Image):
-    logging.info("Setting desktop wallpaper")
+    logging.info('Setting desktop wallpaper')
     dir = tempfile.gettempdir()
-    path = os.path.join(dir, "wunderland.bmp")
+    path = os.path.join(dir, 'wunderland.bmp')
     img.save(path)
 
-    if platform == "win32":
+    if platform == 'win32':
         ctypes.windll.user32.SystemParametersInfoW(20, 0, path, 0)
-    elif platform == "darwin":
+    elif platform == 'darwin':
         wallpaper.set_mac_wallpaper(path)
     else:
         desktop = wallpaper.get_desktop_env()
-        if desktop == "KDE":
+        if desktop == 'KDE':
             set_kde_wallpaper(path)
         else:
             wallpaper.set_desktop_wallpaper(desktop, path)
 
 
 def set_kde_wallpaper(img):
-    """Set the wallpaper on KDE Plasma"""
+    '''Set the wallpaper on KDE Plasma'''
     # For whatever reason, it's not as simple as one would think.
     # Shoutouts to pashazz on GitHub, the author of this snippet
     # Taken from https://github.com/pashazz/ksetwallpaper
-    jscript = """
+    jscript = '''
     var allDesktops = desktops();
     print (allDesktops);
     for (i=0;i<allDesktops.length;i++) {
@@ -80,7 +80,7 @@ def set_kde_wallpaper(img):
         d.writeConfig("Image", "file://%s")
         d.writeConfig("Image", "file://%s")
     }
-    """
+    '''
     import dbus
     bus = dbus.SessionBus()
     plasma = dbus.Interface(bus.get_object(
@@ -94,7 +94,7 @@ def place_images(wunderland: Wunderland, img_name: str, count: int, colorize: bo
         img = wunderland.get_image_from_name(img_name)
         if colorize:
             hex_color = [
-                "#"+''.join([random.choice('ABCDEF0123456789') for i in range(6)])]
+                '#'+''.join([random.choice('ABCDEF0123456789') for _ in range(6)])]
         pos = wunderland.get_random_position(True, (75, 10, 75, 100))
         wunderland.add_entity(
             wunderland=wunderland,
@@ -121,7 +121,7 @@ def place_online_images(wunderland: Wunderland, count: int):
 
     leftovers = count - len(online_cows)
     if (leftovers) >= 0:
-        place_images(wunderland=wunderland, img_name="cow", count=leftovers)
+        place_images(wunderland=wunderland, img_name='cow', count=leftovers)
 
 
 # Kinda hacky. Ignore Gooey if run with args on commandline.
@@ -156,8 +156,8 @@ def main():
                        help='Save the Wunderland in a specified directory', metavar='Target directory', widget='DirChooser')
     args = parser.parse_args()
 
-    logging.info("------------------------------")
-    logging.info("------ Starting process ------")
+    logging.info('------------------------------')
+    logging.info('------ Starting process ------')
 
     if not (args.teams or args.desktop or args.path):
         logging.warning(
@@ -169,23 +169,23 @@ def main():
     # place cows
     if args.online:
         logging.info(
-            "Populating the Wunderland with %s online drawings", args.drawing_count)
+            'Populating the Wunderland with %s online drawings', args.drawing_count)
         place_online_images(wunderland=wunderland, count=args.drawing_count)
     else:
-        logging.info("Populating the Wunderland with %s cows",
+        logging.info('Populating the Wunderland with %s cows',
                      args.drawing_count)
-        place_images(wunderland=wunderland, img_name="cow",
+        place_images(wunderland=wunderland, img_name='cow',
                      count=args.drawing_count)
 
     # generate wunderland
     gif_gen = None
     frame = None
     if args.animated:
-        logging.info("Generating animated Wunderland")
+        logging.info('Generating animated Wunderland')
         gif_gen = WunderlandGIFGenerator(wunderland=wunderland)
         gif_gen.generate_gif_frames(1000)
     else:
-        logging.info("Generating Wunderland")
+        logging.info('Generating Wunderland')
         frame = wunderland.get_frame()
 
     # saving
@@ -209,14 +209,14 @@ def main():
                 'Cannot save Wunderland because given path is not a directory')
             return
 
-        logging.info("Saving as image to '%s'", path)
+        logging.info('Saving as image to "%s"', path)
         if args.animated:
-            gif_gen.save_gif(os.path.join(path, "wunderland.gif"))
+            gif_gen.save_gif(os.path.join(path, 'wunderland.gif'))
         else:
-            frame.save(os.path.join(path, "wunderland.png"))
+            frame.save(os.path.join(path, 'wunderland.png'))
 
-    logging.info("------ Process finished ------")
+    logging.info('------ Process finished ------')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
