@@ -137,8 +137,8 @@ if len(sys.argv) >= 2:
        program_description='Generate Wunderland desktop wallpaper and/or Microsoft Teams background',
        image_dir=local_resource_path('gui'))
 def main():
-    logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
-                        format='[%(asctime)s]: %(message)s', level=logging.INFO)
+    logging.basicConfig(datefmt='%H:%M:%S',
+                        format='[%(asctime)s - %(levelname)s]:  %(message)s', level=logging.INFO)
 
     parser = GooeyParser()
     group = parser.add_argument_group('Settings')
