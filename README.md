@@ -20,8 +20,9 @@ Impress your colleagues, friends and family with this edition of the "Wunderland
 
 # How 2 use
 
-1. Download the latest EXE from the [Releases](https://github.com/DrHaid/wunderland-professional/releases).
-2. Run the executable.
+1. Download the latest release from the [Releases](https://github.com/DrHaid/wunderland-professional/releases) page
+2. Unpack the ZIP file
+3. Run the executable
 
 ❗Your Anti-Virus may (falsely (trust me bro)) detect the program as malicious. It's not a virus - pinky promise... Anyway, if you don't want to take the risk you can...
 
