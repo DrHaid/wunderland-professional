@@ -11,8 +11,10 @@ pillow = "*"
 pyvirtualcam = "*"
 pywal = "*"
 requests = "*"
+gooey = "*"
 
 [dev-packages]
+pyinstaller = "*"
 
 [requires]
 python_version = "3.10"

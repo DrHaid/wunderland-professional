@@ -3,33 +3,51 @@
 Impress your colleagues, friends and family with this edition of the "Wunderland" wallpaper. With the nostalgic feel of the original [LiveWallpaper - Wunderland](https://github.com/DrHaid/LiveWallpaper-Wunderland) and new climate changing additions.
 
 ## Features
-- Photoreal Cows
-- Changing weather
-- Wunderland as Teams Background
-- Wunderland as desktop wallpaper
-- Live Wunderland as webcam background
+- Customize your Wunderland with:
+    - expertly handdrawn cows
+    - custom community drawings
+    - changing weather
+- Desktop wallpaper
+- Animated Wunderland background for Microsoft Teams
 
-![Desktop](https://i.imgur.com/YyKADej.png)
-![Teams](https://i.imgur.com/c1jdoYM.png)
-<sup>* actual results may deviate from demonstration</sup>
+| Desktop wallpaper | MS Teams background |
+|-|-|
+| ![Desktop](/docs/desktop.png) | ![Teams](/docs/teams.png) |
+
+<sup>* results and reactions may deviate from demonstration</sup>
+
+
 
 # How 2 use
-## Requirements
-- Python ~3.8 
-- Installed requirements using `pip install -r requirements.txt`
-## Usage
-### Wunderland Wallpaper
-Run `wunderland_wallpaper.py` with one or both of the following parameters:
-- `-d` to set as Desktop wallpaper
-- `-t` to save as Microsoft Teams background
 
-You can also place the `run_wunderland_generator.bat` file in the Windows Startup folder to run on startup (Windows+R, enter `shell:startup`).
-<br>
-Or you can create a Task in the Windows Task Scheduler to update regularly. When creating a Task set the Action to **Start a Program** and select the `run_wunderland_generator.bat` as target. Choose parameters and enter the directory containing the target in the **Start in (optional)** box:
-![Task Scheduler](https://i.imgur.com/JZ0bXgs.png)
+1. Download the latest EXE from the [Releases](https://github.com/DrHaid/wunderland-professional/releases).
+2. Run the executable.
 
-### Wunderland Webcam
-Install a virtual camera for your operating system. For details read the **Supported virtual cameras** section here https://pypi.org/project/pyvirtualcam/.
-<br>
-Run `wunderland_webcam.py` with or without the following parameters:
-- `-c <camera-index>` to choose which camera to use. Default is 0.
+❗Your Anti-Virus may (falsely (trust me bro)) detect the program as malicious. It's not a virus - pinky promise... Anyway, if you don't want to take the risk you can...
+
+#### ...alternatively
+
+1. Clone the repository
+2. Make sure you have **Python 3.10** & **pipenv** installed
+3. Setup pipenv by running `pipenv install --dev` in the repository directory
+4. Run `pipenv run python .\wunderland_wallpaper.py`
+5. (Or build the EXE yourself by running `pipenv run pyinstaller build-win.spec`) 
+
+## User Interface
+![UI-Screenshot](/docs/ui.png)  
+
+## Run on command line
+You can also run the program on the command line (e.g. to use in a scheduled task).
+```
+> wunderland-generator.exe [-h] [-t] [-d] [-o] [-c Drawing count] [-a] [-w Weather overwrite] [-p Target directory]
+```
+| Parameter                               | Description                                                           |
+|-----------------------------------------|-----------------------------------------------------------------------|
+| -t, --teams                             | Saves Wunderland as Microsoft Teams background                        |
+| -d, --desktop                           | Sets Wunderland as Desktop wallpaper                                  |
+| -o, --online                            | Use custom drawings from API                                          |
+| -c Drawing count, --count Drawing count | Define how many drawings populate the Wunderland                      |
+| -a, --animated                          | Generates an animated Wunderland                                      |
+| -w Weather overwrite                    | Set custom weather instead of current location (check UI for options) |
+| -p Target directory                     | Save the Wunderland in a specified directory                          |
+ 
