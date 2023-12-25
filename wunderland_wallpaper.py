@@ -4,7 +4,7 @@ import sys
 import tempfile
 import ctypes
 import logging
-from PIL import Image
+from PIL.Image import Image as PillowIMG
 from sys import platform
 from gooey import Gooey, GooeyParser, local_resource_path
 from pywal import wallpaper
@@ -12,11 +12,11 @@ from wunderland import Weather, Wunderland
 from wunderland_gif_generator import WunderlandGIFGenerator
 
 
-def get_teamsbg_path():
-    return os.path.join(os.getenv('APPDATA'), 'Microsoft\\Teams\\Backgrounds\\Uploads')
+def get_teamsbg_path() -> str:
+    return os.path.join(os.getenv('APPDATA', ''), 'Microsoft\\Teams\\Backgrounds\\Uploads')
 
 
-def save_teamsbg(img: Image):
+def save_teamsbg(img: PillowIMG) -> None:
     if platform != 'win32':
         logging.error(
             'Microsoft Teams background only supported on Windows :(')
@@ -30,7 +30,7 @@ def save_teamsbg(img: Image):
     img_thumb.save(bgthumb_path)
 
 
-def save_animated_teamsbg(gif_gen: WunderlandGIFGenerator):
+def save_animated_teamsbg(gif_gen: WunderlandGIFGenerator) -> None:
     if platform != 'win32':
         logging.error(
             'Microsoft Teams background only supported on Windows :(')
@@ -47,7 +47,7 @@ def save_animated_teamsbg(gif_gen: WunderlandGIFGenerator):
     os.replace(bggif_path, pre + '.png')
 
 
-def set_wallpaper(img: Image):
+def set_wallpaper(img: PillowIMG) -> None:
     logging.info('Setting desktop wallpaper')
     dir = tempfile.gettempdir()
     path = os.path.join(dir, 'wunderland.bmp')
@@ -65,7 +65,8 @@ def set_wallpaper(img: Image):
             wallpaper.set_desktop_wallpaper(desktop, path)
 
 
-def set_kde_wallpaper(img):
+# TODO: Does this even still work?
+def set_kde_wallpaper(img) -> None:
     '''Set the wallpaper on KDE Plasma'''
     # For whatever reason, it's not as simple as one would think.
     # Shoutouts to pashazz on GitHub, the author of this snippet
@@ -81,7 +82,7 @@ def set_kde_wallpaper(img):
         d.writeConfig("Image", "file://%s")
     }
     '''
-    import dbus
+    import dbus  # type: ignore
     bus = dbus.SessionBus()
     plasma = dbus.Interface(bus.get_object(
         'org.kde.plasmashell', '/PlasmaShell'), dbus_interface='org.kde.PlasmaShell')
@@ -89,21 +90,22 @@ def set_kde_wallpaper(img):
         'org.kde.image', 'org.kde.image', '%s', img))
 
 
-def place_images(wunderland: Wunderland, img_name: str, count: int, colorize: bool = False):
+def place_images(wunderland: Wunderland, img_name: str, count: int, colorize: bool = False) -> None:
     for x in range(0, count):
         img = wunderland.get_image_from_name(img_name)
+        hex_color: str | None = None
         if colorize:
-            hex_color = [
-                '#'+''.join([random.choice('ABCDEF0123456789') for _ in range(6)])]
+            hex_color = '#' + \
+                ''.join([random.choice('ABCDEF0123456789') for _ in range(6)])
         pos = wunderland.get_random_position(True, (75, 10, 75, 100))
         wunderland.add_entity(
             wunderland=wunderland,
             image=img, position=pos,
             facing_right=(x % 2 == 0),
-            color=hex_color[0] if colorize else None)
+            color=hex_color if hex_color else None)
 
 
-def place_online_images(wunderland: Wunderland, count: int):
+def place_online_images(wunderland: Wunderland, count: int) -> None:
     try:
         online_cows = wunderland.get_online_images(count - 1)
     except Exception as e:
@@ -191,8 +193,10 @@ def main():
     # saving
     if args.teams:
         if args.animated:
+            assert gif_gen is not None
             save_animated_teamsbg(gif_gen)
         else:
+            assert frame is not None
             save_teamsbg(frame)
 
     if args.desktop:
@@ -200,6 +204,7 @@ def main():
             logging.error(
                 'The animated Wunderland cannot be set as desktop wallpaper :(')
         else:
+            assert frame is not None
             set_wallpaper(frame)
 
     if args.path:
@@ -211,8 +216,10 @@ def main():
 
         logging.info('Saving as image to "%s"', path)
         if args.animated:
+            assert gif_gen is not None
             gif_gen.save_gif(os.path.join(path, 'wunderland.gif'))
         else:
+            assert frame is not None
             frame.save(os.path.join(path, 'wunderland.png'))
 
     logging.info('------ Process finished ------')

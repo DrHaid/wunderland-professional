@@ -8,7 +8,8 @@ import json
 import base64
 from typing import Tuple
 import requests
-from PIL import Image, ImageOps
+from PIL.Image import Image as PillowIMG
+from PIL import ImageOps, Image
 
 
 class WeatherData:
@@ -34,9 +35,11 @@ class Weather(Enum):
     FOGGY = WeatherData('Foggy', '🌫', 'cloudy', 'foggy') # foggy
     # autopep8: on
 
+    @staticmethod
     def get_display_names():
         return [w.value.display_name for w in Weather]
 
+    @staticmethod
     def get_by_attr(attr: str, value: str):
         return [w.value for w in Weather if getattr(w.value, attr) == value][0]
 
@@ -67,7 +70,7 @@ class Wunderland:
                 'An error occured while trying to fetch the online drawings')
             raise e
 
-    def get_current_weather(self) -> Weather:
+    def get_current_weather(self) -> WeatherData:
         '''
         Get weather for current IP using wttr.in (https://github.com/chubin/wttr.in)  
         '''
@@ -82,7 +85,8 @@ class Wunderland:
                 'An error occured while trying to fetch the current weather')
             raise e
 
-    def get_random_position(self, grounded: bool, padding: Tuple = (0, 0, 0, 0), origin: Tuple = None, radius: int = None) -> Tuple:
+    def get_random_position(self, grounded: bool, padding: Tuple = (0, 0, 0, 0),
+                            origin: Tuple | None = None, radius: int | None = None) -> Tuple:
         '''
         Get random position on wunderland.
         '''
@@ -117,7 +121,7 @@ class Wunderland:
 
         return (x, y)
 
-    def add_entity(self, wunderland, image: Image, position: Tuple, facing_right: bool, color: str = None):
+    def add_entity(self, wunderland, image: PillowIMG, position: Tuple, facing_right: bool, color: str | None = None):
         '''
         Add a WunderlandEntity to this Wunderland instance 
         '''
@@ -128,7 +132,7 @@ class Wunderland:
             color=color)
         self.wunderland_entities.append(entity)
 
-    def get_frame(self) -> Image:
+    def get_frame(self) -> PillowIMG:
         '''
         Render frame of the Wunderland.
         '''
@@ -175,7 +179,8 @@ class Wunderland:
 
 
 class WunderlandEntity:
-    def __init__(self, wunderland: Wunderland, image: Image, position: Tuple, facing_right: bool, color: str):
+    def __init__(self, wunderland: Wunderland, image: PillowIMG, position: Tuple = (0, 0),
+                 facing_right: bool = False, color: str | None = None):
         self.wunderland = wunderland
         self.image = self.tint_image(image, color) if color else image
         self.position = position
@@ -185,14 +190,14 @@ class WunderlandEntity:
 
         self.flip_img(facing_right=facing_right)
 
-    def tint_image(self, src: Image, color: str) -> Image:
+    def tint_image(self, src: PillowIMG, color: str) -> PillowIMG:
         '''
         Tint input image using hex color.
         '''
         src.load()
         r, g, b, alpha = src.split()
         gray = ImageOps.grayscale(src)
-        result = ImageOps.colorize(gray, (0, 0, 0, 0), color)
+        result = ImageOps.colorize(gray, 'black', color)
         result.putalpha(alpha)
         return result
 
