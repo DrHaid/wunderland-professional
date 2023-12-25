@@ -24,9 +24,12 @@ jobs:
     - name: Build executable
       run: pipenv run pyinstaller build-win.spec
 
-    - name: Release executable
+    - name: Create ZIP archive
+      run: Compress-Archive -Path ./dist/wunderland-generator.exe -Destination ./dist/wunderland-generator.zip
+
+    - name: Release ZIP archive
       uses: softprops/action-gh-release@v1
       with:
-        files: ./dist/wunderland-generator.exe
+        files: ./dist/wunderland-generator.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
