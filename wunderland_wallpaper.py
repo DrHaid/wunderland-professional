@@ -104,7 +104,14 @@ def place_images(wunderland: Wunderland, img_name: str, count: int, colorize: bo
 
 
 def place_online_images(wunderland: Wunderland, count: int):
-    online_cows = wunderland.get_online_images(count - 1)
+    try:
+        online_cows = wunderland.get_online_images(count - 1)
+    except Exception as e:
+        logging.error(repr(e))
+        logging.info('Falling back to using default cows')
+        place_images(wunderland=wunderland, img_name='cow', count=count)
+        return
+
     for cow in online_cows:
         pos = wunderland.get_random_position(True, (75, 10, 75, 100))
         wunderland.add_entity(

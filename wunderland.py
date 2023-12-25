@@ -56,20 +56,31 @@ class Wunderland:
         """
         Get custom drawn cows from API.
         """
-        logging.info("Requesting online drawings from server")
-        response = requests.get(f'https://drhaid.com/api/cows/random/{count}')
-        data = json.loads(response.content)
-        return [self.get_image_from_base64(cow["image_data"].replace("data:image/png;base64,", "")) for cow in data]
+        try:
+            logging.info("Requesting online drawings from server")
+            response = requests.get(
+                f'https://drhaid.com/api/cows/random/{count}')
+            data = json.loads(response.content)
+            return [self.get_image_from_base64(cow["image_data"].replace("data:image/png;base64,", "")) for cow in data]
+        except Exception as e:
+            logging.error(
+                'An error occured while trying to fetch the online drawings')
+            raise e
 
     def get_current_weather(self) -> Weather:
         """
         Get weather for current IP using wttr.in (https://github.com/chubin/wttr.in)  
         """
-        logging.info("Requesting current weather from http://wttr.in/")
-        response = requests.get(f'http://wttr.in/?format=%c')
-        w = response.content.decode("utf-8").strip()
-        weather = Weather.get_by_attr("emoji", w)
-        return weather
+        try:
+            logging.info("Requesting current weather from http://wttr.in/")
+            response = requests.get(f'http://wttr.in/?format=%c')
+            w = response.content.decode("utf-8").strip()
+            weather = Weather.get_by_attr("emoji", w)
+            return weather
+        except Exception as e:
+            logging.error(
+                'An error occured while trying to fetch the current weather')
+            raise e
 
     def get_random_position(self, grounded: bool, padding: Tuple = (0, 0, 0, 0), origin: Tuple = None, radius: int = None) -> Tuple:
         """
@@ -146,10 +157,18 @@ class Wunderland:
         for entity in self.wunderland_entities:
             entity.move(delta_time)
 
-    def __init__(self, weather=None):
+    def __init__(self, weather: str | None = None):
+        if not weather:
+            try:
+                self.weather = self.get_current_weather()
+            except Exception as e:
+                logging.error(repr(e))
+                logging.info('Falling back to using weather "Partly cloudy"')
+                self.weather = Weather.PARTLY_CLOUDY.value
+        else:
+            self.weather = Weather.get_by_attr("display_name", weather)
+
         self.ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-        self.weather = Weather.get_by_attr(
-            "display_name", weather) if weather else self.get_current_weather()
         self.BG_IMG = Image.open(
             f'{self.ROOT_DIR}/img/wallpaper_{self.weather.img_name}.png')
         self.wunderland_entities = []
