@@ -24,8 +24,9 @@ jobs:
     - name: Build executable
       run: pipenv run pyinstaller build-win.spec
 
-    - name: Upload build artifact
-      uses: actions/upload-artifact@v4
+    - name: Release executable
+      uses: softprops/action-gh-release@v1
       with:
-        name: wunderland-generator
-        path: ./dist/wunderland-generator.exe
+        files: ./dist/wunderland-generator.exe
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
