@@ -1,4 +1,5 @@
 # Wunderland Professional
+![](https://github.com/DrHaid/wunderland-professional/actions/workflows/release-win.yml/badge.svg)  
 
 Impress your colleagues, friends and family with this edition of the "Wunderland" wallpaper. With the nostalgic feel of the original [LiveWallpaper - Wunderland](https://github.com/DrHaid/LiveWallpaper-Wunderland) and new climate changing additions.
 
