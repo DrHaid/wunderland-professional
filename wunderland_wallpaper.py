@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import random
 import sys
 import tempfile
@@ -12,39 +13,23 @@ from wunderland import Weather, Wunderland
 from wunderland_gif_generator import WunderlandGIFGenerator
 
 
-def get_teamsbg_path() -> str:
-    return os.path.join(os.getenv('APPDATA', ''), 'Microsoft\\Teams\\Backgrounds\\Uploads')
+def save_img(img: PillowIMG, path: Path, teams: bool) -> None:
+    logging.info('Saving image')
+    img.save(path)
+    if teams:
+        thumb_filename = path.parent / f'{path.stem}_thumb{path.suffix}'
+        img_thumb = img.resize((280, 158))
+        img_thumb.save(thumb_filename)
 
 
-def save_teamsbg(img: PillowIMG) -> None:
-    if platform != 'win32':
-        logging.error(
-            'Microsoft Teams background only supported on Windows :(')
-        return
-    logging.info('Saving Microsoft Teams background')
-    dir = get_teamsbg_path()
-    img_thumb = img.resize((280, 158))
-    bg_path = os.path.join(dir, 'wunderland.png')
-    bgthumb_path = os.path.join(dir, 'wunderland_thumb.png')
-    img.save(bg_path)
-    img_thumb.save(bgthumb_path)
-
-
-def save_animated_teamsbg(gif_gen: WunderlandGIFGenerator) -> None:
-    if platform != 'win32':
-        logging.error(
-            'Microsoft Teams background only supported on Windows :(')
-        return
-    logging.info('Setting animated Microsoft Teams background')
-    dir = get_teamsbg_path()
-    img_thumb = gif_gen.get_frame(0).resize((280, 158))
-    bgthumb_path = os.path.join(dir, 'wunderland_gif_thumb.png')
-    img_thumb.save(bgthumb_path)
-
-    bggif_path = os.path.join(dir, 'wunderland_gif.gif')
-    gif_gen.save_gif(bggif_path)
-    pre, _ = os.path.splitext(bggif_path)
-    os.replace(bggif_path, pre + '.png')
+def save_animated_img(gif_gen: WunderlandGIFGenerator, path: Path, teams: bool) -> None:
+    logging.info('Saving animated image')
+    gif_gen.save_gif(str(path))
+    if teams:
+        img_thumb = gif_gen.get_frame(0).resize((280, 158))
+        thumb_filename = path.parent / f'{path.stem}_thumb.png'
+        img_thumb.save(thumb_filename)
+        os.replace(path, path.parent / f'{path.stem}.png')
 
 
 def set_wallpaper(img: PillowIMG) -> None:
@@ -142,26 +127,36 @@ def main():
 
     parser = GooeyParser()
     group = parser.add_argument_group('Settings')
-    group.add_argument('-t', '--teams', action='store_true', dest='teams',
-                       help='Saves Wunderland as Microsoft Teams background', metavar='MS Teams background')
     group.add_argument('-d', '--desktop', action='store_true', dest='desktop',
                        help='Sets Wunderland as Desktop wallpaper', metavar='Desktop wallpaper')
     group.add_argument('-o', '--online', action='store_true', dest='online',
                        help='Use custom drawings from API', metavar='Online drawings')
     group.add_argument('-c', '--count', type=int, dest='drawing_count', default=6,
                        help='Define how many drawings populate the Wunderland', metavar='Drawing count', widget='IntegerField')
-    group.add_argument('-a', '--animated', action='store_true', dest='animated',
-                       help='Generates an animated Wunderland', metavar='Animate image')
     group.add_argument('-w', '--weather', type=str, dest='weather', default=None,
                        help='Set custom weather instead of current location', metavar='Weather overwrite', choices=Weather.get_display_names())
     group.add_argument('-p', '--out-path', type=str, dest='path', default=None,
-                       help='Save the Wunderland in a specified directory', metavar='Target directory', widget='DirChooser')
+                       help='Generate a Wunderland image', metavar='Image', widget='FileSaver',
+                       gooey_options={
+                           'wildcard':
+                           "PNG (*.png)|*.png",
+                           'default_file': "wunderland.png"
+                       })
+    group.add_argument('-a', '--animated-path', type=str, dest='animated_path', default=None,
+                       help='Generate an animated Wunderland image', metavar='Animated image', widget='FileSaver',
+                       gooey_options={
+                           'wildcard':
+                           "GIF (*.gif)|*.gif",
+                           'default_file': "wunderland.gif"
+                       })
+    group.add_argument('-t', '--teams', action='store_true', dest='teams',
+                       help='Saves low-res "_thumb.png" and (if animated) the GIF as PNG. Required for Microsoft Teams background', metavar='Save for Teams')
     args = parser.parse_args()
 
     logging.info('------------------------------')
     logging.info('------ Starting process ------')
 
-    if not (args.teams or args.desktop or args.path):
+    if not (args.desktop or args.path or args.animated_path):
         logging.warning(
             '⚠️ No saving method selected. No Wunderland will be generated')
         return
@@ -182,45 +177,30 @@ def main():
     # generate wunderland
     gif_gen = None
     frame = None
-    if args.animated:
-        logging.info('Generating animated Wunderland')
-        gif_gen = WunderlandGIFGenerator(wunderland=wunderland)
-        gif_gen.generate_gif_frames(1000)
-    else:
+
+    if args.desktop or args.path:
         logging.info('Generating Wunderland')
         frame = wunderland.get_frame()
 
-    # saving
-    if args.teams:
-        if args.animated:
-            assert gif_gen is not None
-            save_animated_teamsbg(gif_gen)
-        else:
-            assert frame is not None
-            save_teamsbg(frame)
-
     if args.desktop:
-        if args.animated:
-            logging.error(
-                'The animated Wunderland cannot be set as desktop wallpaper :(')
-        else:
-            assert frame is not None
-            set_wallpaper(frame)
+        assert frame is not None
+        set_wallpaper(frame)
 
     if args.path:
         path = args.path
-        if not os.path.isdir(path):
-            logging.error(
-                'Cannot save Wunderland because given path is not a directory')
-            return
+        assert frame is not None
 
-        logging.info('Saving as image to "%s"', path)
-        if args.animated:
-            assert gif_gen is not None
-            gif_gen.save_gif(os.path.join(path, 'wunderland.gif'))
-        else:
-            assert frame is not None
-            frame.save(os.path.join(path, 'wunderland.png'))
+        logging.info('Saving image to "%s"', path)
+        save_img(frame, Path(path), args.teams)
+
+    if args.animated_path:
+        path = args.animated_path
+        logging.info('Generating animated Wunderland')
+        gif_gen = WunderlandGIFGenerator(wunderland=wunderland)
+        gif_gen.generate_gif_frames(1000)
+
+        logging.info('Saving animated image to "%s"', path)
+        save_animated_img(gif_gen, Path(path), args.teams)
 
     logging.info('------ Process finished ------')
 
