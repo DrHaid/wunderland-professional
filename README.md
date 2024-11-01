@@ -43,13 +43,21 @@ You can also run the program on the command line (e.g. to use in a scheduled tas
 ```
 > wunderland-generator.exe [-h] [-t] [-d] [-o] [-c Drawing count] [-a] [-w Weather overwrite] [-p Target directory]
 ```
-| Parameter                               | Description                                                           |
-|-----------------------------------------|-----------------------------------------------------------------------|
-| -t, --teams                             | Saves Wunderland as Microsoft Teams background                        |
-| -d, --desktop                           | Sets Wunderland as Desktop wallpaper                                  |
-| -o, --online                            | Use custom drawings from API                                          |
-| -c Drawing count, --count Drawing count | Define how many drawings populate the Wunderland                      |
-| -a, --animated                          | Generates an animated Wunderland                                      |
-| -w Weather overwrite                    | Set custom weather instead of current location (check UI for options) |
-| -p Target directory                     | Save the Wunderland in a specified directory                          |
- 
+| Parameter                               | Description                                                                                                                                 |
+|-----------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
+| -d, --desktop                           | Sets Wunderland as Desktop wallpaper                                                                                                        |
+| -o, --online                            | Use custom drawings from API                                                                                                                |
+| -c Drawing count, --count Drawing count | Define how many drawings populate the Wunderland                                                                                            |
+| -a, --animated                          | Generates an animated Wunderland                                                                                                            |
+| -w Weather overwrite                    | Set custom weather instead of current location (check UI for options)                                                                       |
+| -p File path, --out-path File path      | Save the Wunderland image as a PNG file                                                                                                     |
+| -a File path, --animated-path File path | Save the Wunderland animated image as a GIF file                                                                                            |
+| -t, --teams                             | Makes the output image suitable to use in MS Teams. Saves a low-res "_thumb.png" copy. Renames the animated GIF to PNG so Teams can load it |
+
+
+## How to use the Teams background
+1. Find the directory where Microsoft Teams saves the backgrounds.
+    - old Teams: `C:/Users/<windows_user_name>/AppData/Roaming/Microsoft/Teams/Backgrounds/Uploads`
+    - new Teams: `C:/Users/<windows_user_name>/AppData/Local/Packages/MSTeams_8wekyb3d8bbwe/LocalCache/Microsoft/MSTeams/Backgrounds/Uploads`
+2. Run `wunderland_generator.exe` with the `--teams` option and save the image in the backgrounds directory
+    - ❗If the background is not showing up in Teams: You may have to overwrite an existing background that was added previously using the Teams app

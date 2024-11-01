@@ -117,7 +117,7 @@ if len(sys.argv) >= 2:
         sys.argv.append('--ignore-gooey')
 
 
-@Gooey(default_size=(635, 585),
+@Gooey(default_size=(672, 531),
        program_name='Wunderland Generator',
        program_description='Generate Wunderland desktop wallpaper and/or Microsoft Teams background',
        image_dir=local_resource_path('gui'))
