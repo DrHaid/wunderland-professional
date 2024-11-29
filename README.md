@@ -48,7 +48,6 @@ You can also run the program on the command line (e.g. to use in a scheduled tas
 | -d, --desktop                           | Sets Wunderland as Desktop wallpaper                                                                                                        |
 | -o, --online                            | Use custom drawings from API                                                                                                                |
 | -c Drawing count, --count Drawing count | Define how many drawings populate the Wunderland                                                                                            |
-| -a, --animated                          | Generates an animated Wunderland                                                                                                            |
 | -w Weather overwrite                    | Set custom weather instead of current location (check UI for options)                                                                       |
 | -p File path, --out-path File path      | Save the Wunderland image as a PNG file                                                                                                     |
 | -a File path, --animated-path File path | Save the Wunderland animated image as a GIF file                                                                                            |
