@@ -63,7 +63,7 @@ class Wunderland:
             logging.info('Requesting online drawings from server')
             response = requests.get(
                 f'https://drhaid.com/wunderland/api/cows/random/{count}')
-            data = json.loads(response.content)
+            data = json.loads(response.content).cows
             return [self.get_image_from_base64(cow['image_data'].replace('data:image/png;base64,', '')) for cow in data]
         except Exception as e:
             logging.error(
